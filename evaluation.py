@@ -18,10 +18,12 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
                    labels: Union[List[int], List[str]], 
                    gt_ans_ids_list: List[List[int]], 
                    dataset_name: str, 
+                   gen_tokens: int = 10,
                    repE: bool = False, 
+                   layers: List[int] = [],
                    save_every: int = 100, 
                    save_dir: str = "results_tmp", 
-                   resume: bool = True) -> tuple[float, List[List[float]], List[List[int]]]:
+                   resume: bool = False) -> tuple[float, List[List[float]], List[List[int]]]:
     """
     Evaluate the ICL accuracy of the input model on the provided prompts.
 
@@ -31,7 +33,9 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
         labels: ground truth labels for the task at hand
         gt_ans_ids_list: list of possible token ids for the representation of each ground truth label
         dataset_name: name of the dataset
+        gen_tokens: maximum number of new tokens to generate
         repE: whether to use Representantion Engineering
+        layers: list of hidden layer numbers in which representation control must be injected
         save_every: number of samples to process before storing intermediate results
         save_dir: where to store intermediate results
         resume: whether to restart an interrupted evaluation from the last stored intermediate results
