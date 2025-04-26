@@ -21,6 +21,7 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
                    gen_tokens: int = 10,
                    repE: bool = False, 
                    layers: List[int] = [],
+                   activations_path: str = "",
                    save_every: int = 100, 
                    save_dir: str = "results_tmp", 
                    resume: bool = False) -> tuple[float, List[List[float]], List[List[int]]]:
@@ -36,6 +37,7 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
         gen_tokens: maximum number of new tokens to generate
         repE: whether to use Representantion Engineering
         layers: list of hidden layer numbers in which representation control must be injected
+        activations: path to the file containing the activations for representantion control
         save_every: number of samples to process before storing intermediate results
         save_dir: where to store intermediate results
         resume: whether to restart an interrupted evaluation from the last stored intermediate results
@@ -72,18 +74,17 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
       repe_pipeline_registry()
 
       # initialize a control pipeline for Mistral
-      layer_id = list(range(-7, -10, -1)) # layers to inject control in
       control_method="reading_vec" # add a scaled version of a direction vector to internal activations during forward pass
 
       rep_control_pipeline = pipeline(
           "rep-control",
           model=model,
           tokenizer=tokenizer,
-          layers=layer_id,
+          layers=layers, # layers to inject control in
           control_method=control_method)
       
       # load pre-saved direction vectors that represent the honesty concept
-      activations = torch.load("/content/drive/MyDrive/Tesi Computer Science/ShortcutProject/activations.pt")
+      activations = torch.load(activations_path)
 
     # resume an interrupted evaluation
     if resume:
@@ -122,13 +123,13 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
             if repE:  
               output_dict = rep_control_pipeline(prompt, 
                                                 activations=activations,  
-                                                max_new_tokens=10, 
+                                                max_new_tokens=gen_tokens, 
                                                 do_sample=False, 
                                                 repetition_penalty=1.1)
             else:
               output_dict = model.generate(input_ids=inputs["input_ids"], 
                                             attention_mask=attention_mask,
-                                            max_new_tokens=10, 
+                                            max_new_tokens=gen_tokens, 
                                             return_dict_in_generate=True, 
                                             output_scores=True, 
                                             pad_token_id=tokenizer.eos_token_id)
