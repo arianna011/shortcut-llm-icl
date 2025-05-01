@@ -12,6 +12,7 @@ import os
 from typing import List,Union
 import gc
 from accelerate.utils import release_memory
+from tqdm import tqdm
 
 def ICL_evaluation(model: transformers.PreTrainedModel, 
                    prompt_list: List[str], 
@@ -102,10 +103,9 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
             print(f"Resuming from index {start_index} using {last_file}")
 
 
-    for index in range(start_index, len(prompt_list)):
+    for index in tqdm(range(start_index, len(prompt_list)), desc="Processing"):
         
         prompt = prompt_list[index]
-        print(f"Evaluating: {index+1}/{len(prompt_list)}")
 
         with torch.no_grad():
 
@@ -165,18 +165,14 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
                     "all_label_probs": all_label_probs,
                     "indices": list(range(index + 1))
                 }, f)
-            print(f"Saved checkpoint at step {index + 1} → {partial_file}")
-
-            # flush in-memory storage if low on RAM
-            # predictions.clear()
-            # all_label_probs.clear()
+            tqdm.write(f"Saved checkpoint at step {index + 1} → {partial_file}")
 
             # evaluate intermediate performance
             cf = confusion_matrix(labels[:len(predictions)], predictions)
             normalized_cf = cf / cf.sum(axis=1, keepdims=True)
-            print("Partial normalized confusion matrix: ", normalized_cf)
+            tqdm.write("Partial normalized confusion matrix: ", normalized_cf)
             acc, _ = classification_accuracy(predictions, labels[:len(predictions)])
-            print("Partial accuracy:", acc)
+            tqdm.write("Partial accuracy:", acc)
 
     acc, _ = classification_accuracy(predictions, labels[:len(predictions)])
     print('Final classification accuracy:', acc)

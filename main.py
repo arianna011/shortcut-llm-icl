@@ -125,7 +125,7 @@ def main():
 
     s = ""
     if RepE:
-        s += f"layers: {rep_layers}"
+        s += f" layers: {rep_layers}"
     write_json(record_file_path, 
                "num shot: " + str(num_shot) + " new tokens: " + str(new_tokens) + " repE: " + str(RepE) + s)
 
