@@ -63,7 +63,8 @@ eval_resume = args.resume.lower() == "true"
 # MODEL SETUP
 device = torch.device("cuda:0")
 model_kwargs = {
-    "torch_dtype": torch.float16 if torch.cuda.is_available() else torch.float32
+    "torch_dtype": torch.float16 if torch.cuda.is_available() else torch.float32,
+    "low_cpu_mem_usage": True
 }
 
 if hf_token:
@@ -97,17 +98,17 @@ def main():
     # gen prompts with different examples for different random seeds
     if not order_index and not format_index:
         prompt_list, test_labels, demonstration, test_sentences = prepare_dataset_test(dataset_name, num_shot=num_shot)
-        validate_data = prepare_dataset_validate(dataset_name, demonstration)
+        #validate_data = prepare_dataset_validate(dataset_name, demonstration)
 
     # gen prompts with different prompt formatting
     if format_index:
         prompt_list, test_labels, demonstration, test_sentences, ans_label_list = gen_test_data_format(dataset_name, format_index)
-        validate_data = gen_validate_data_format(dataset_name, demonstration, format_index)
+        #validate_data = gen_validate_data_format(dataset_name, demonstration, format_index)
 
     # gen prompts with different example order
     if order_index:
         prompt_list, test_labels, demonstration, test_sentences, rand_example_sample_index_order = gen_test_data_order(dataset_name, order_index)
-        validate_data = gen_validate_data_order(dataset_name, demonstration)
+        #validate_data = gen_validate_data_order(dataset_name, demonstration)
 
     # labels of the dataset
     ans_label_list = task_labels(dataset_name)
