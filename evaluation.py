@@ -170,9 +170,9 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
             # evaluate intermediate performance
             cf = confusion_matrix(labels[:len(predictions)], predictions)
             normalized_cf = cf / cf.sum(axis=1, keepdims=True)
-            tqdm.write("Partial normalized confusion matrix: ", normalized_cf)
+            tqdm.write(f"Partial normalized confusion matrix:\n{np.array2string(normalized_cf, precision=2)}")
             acc, _ = classification_accuracy(predictions, labels[:len(predictions)])
-            tqdm.write("Partial accuracy:", acc)
+            tqdm.write(f"Partial accuracy: {acc}")
 
     acc, _ = classification_accuracy(predictions, labels[:len(predictions)])
     print('Final classification accuracy:', acc)
