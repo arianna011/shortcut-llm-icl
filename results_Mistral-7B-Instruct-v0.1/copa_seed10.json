@@ -4,3 +4,5 @@
 "\n\nclassification_accuracy: 0.82[[43 12]\n [ 6 39]]"
 "num shot: 1 new tokens: 10 repE: True layers: [-6, -7, -8]"
 "\n\nclassification_accuracy: 0.82[[43 12]\n [ 6 39]]"
+"num shot: 1 new tokens: 10 repE: True layers: [-5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17]"
+"\n\nclassification_accuracy: 0.86[[49  6]\n [ 8 37]]"
