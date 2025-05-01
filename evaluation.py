@@ -140,12 +140,6 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
             outputs = tokenizer.batch_decode(outputs.detach().cpu().numpy(), skip_special_tokens=True)[0] # (batch size = 1)
             outputs_only = outputs[prompt_length:]
 
-             # free memory 
-            del inputs, input_ids, attention_mask, output_dict, scores, answer_probs
-            gc.collect()
-            torch.cuda.empty_cache()
-            release_memory(model)
-
             if dataset_name == 'copa':
                 answer_logits = scores[1][0] # llama output '' before numbers (1 or 2)
             else:
@@ -155,6 +149,12 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
             prediction_i, predict_prob_list = predict_label(answer_probs, gt_ans_ids_list)
             predictions.append(prediction_i)
             all_label_probs.append(predict_prob_list)
+
+            # free memory 
+            del inputs, input_ids, attention_mask, output_dict, scores, answer_probs
+            gc.collect()
+            torch.cuda.empty_cache()
+            release_memory(model)
        
         # save partial results
         if (index + 1) % save_every == 0 or index == len(prompt_list) - 1:
