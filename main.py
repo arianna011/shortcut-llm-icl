@@ -1,6 +1,6 @@
 import os
 import json
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 import transformers
 import torch
 from utils import *
@@ -62,6 +62,14 @@ eval_resume = args.resume.lower() == "true"
 
 # MODEL SETUP
 device = torch.device("cuda:0")
+
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_use_double_quant=True,             # This enables double quantization
+    bnb_4bit_quant_type="nf4",                  # "nf4" or "fp4" — nf4 is generally better
+    bnb_4bit_compute_dtype=torch.float16,       # Use float16 for performance
+)
+
 model_kwargs = {
     "torch_dtype": torch.float16 if torch.cuda.is_available() else torch.float32,
     "low_cpu_mem_usage": True
@@ -72,10 +80,10 @@ if hf_token:
 
 if use_auto_device_map:
     model_kwargs["device_map"] = "auto"
-    model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
+    model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, **model_kwargs)
 else:
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_device_id
-    model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs).to(device)
+    model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, **model_kwargs).to(device)
 
 tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token if hf_token else None)
 
