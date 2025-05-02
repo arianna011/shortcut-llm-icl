@@ -1,2 +1,4 @@
 "num shot: 1 new tokens: 10 repE: False"
 "\n\nclassification_accuracy: 0.6757679180887372[[172  31  25  38]\n [ 43 224  13  31]\n [ 29  47 196  38]\n [ 31  35  19 200]]"
+"num shot: 1 new tokens: 10 repE: True layers: [-5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17]"
+"\n\nclassification_accuracy: 0.6689419795221843[[167  40  25  34]\n [ 32 242  10  27]\n [ 28  55 190  37]\n [ 28  45  27 185]]"
