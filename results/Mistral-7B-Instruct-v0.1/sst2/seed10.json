@@ -1,5 +1,0 @@
-"sst2 seed_value: 10 num shot: 1 repE: False"
-"\n\nclassification_accuracy: 0.9472477064220184[[411  17]\n [ 29 415]]"
-"sst2 seed_value: 10 num shot: 1 repE: True"
-"\n\nclassification_accuracy: 0.9506880733944955[[411  17]\n [ 26 418]]"
-"sst2 seed_value: 10 num shot: 1 repE: True"

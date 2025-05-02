@@ -1,6 +1,0 @@
-"cr seed_value: 10 num shot: 1 repE: False"
-"\n\nclassification_accuracy: 0.9175531914893617[[116  20]\n [ 11 229]]"
-"cr seed_value: 10 num shot: 1 repE: True"
-"cr seed_value: 10 num shot: 1 repE: True"
-"cr seed_value: 10 num shot: 1 repE: True"
-"\n\nclassification_accuracy: 0.9148936170212766[[112  24]\n [  8 232]]"
