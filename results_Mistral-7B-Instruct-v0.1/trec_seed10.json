@@ -2,3 +2,5 @@
 "\n\nclassification_accuracy: 0.78[[  9   0   0   0   0   0]\n [  1  81   7   0   2   3]\n [  3  61  74   0   0   0]\n [  0   7   0  58   0   0]\n [  0  26   0   0  55   0]\n [  0   0   0   0   0 113]]"
 "num shot: 1 new tokens: 10 repE: True layers: [-6, -7, -8]"
 "\n\nclassification_accuracy: 0.778[[  9   0   0   0   0   0]\n [  1  80   8   0   2   3]\n [  3  61  74   0   0   0]\n [  0   7   0  58   0   0]\n [  0  26   0   0  55   0]\n [  0   0   0   0   0 113]]"
+"num shot: 1 new tokens: 10 repE: True layers: [-5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17]"
+"\n\nclassification_accuracy: 0.8[[  9   0   0   0   0   0]\n [  0  65  24   0   2   3]\n [  2  38  98   0   0   0]\n [  0   7   0  58   0   0]\n [  0  22   0   0  59   0]\n [  0   0   0   0   2 111]]"
