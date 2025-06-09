@@ -161,11 +161,11 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
                 if prediction_i != ground_truth:
                     fail_examples.append({
                         "index": index,
-                        "prompt": prompt.replace("\n", "\\n"),
-                        "prediction": prediction_i,
-                        "ground_truth": ground_truth,
-                        "output_text": outputs_only.strip().replace("\n", "\\n"),
-                        "probabilities": str(predict_prob_list)
+                        "prompt": prompt.replace("\n", "\\n").replace('"', '""'),
+                        "prediction": int(prediction_i),
+                        "ground_truth": int(ground_truth),
+                        "output_text": outputs_only.strip().replace("\n", "\\n").replace('"', '""'),
+                        "probabilities": json.dumps(predict_prob_list)
                     })
 
             # free memory 
@@ -200,17 +200,17 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
     # store fail examples on file
     if fail_examples:
         with open(failures_csv_path, mode="w", encoding="utf-8", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=fail_examples[0].keys())
+            writer = csv.DictWriter(f, fieldnames=fail_examples[0].keys(), quoting=csv.QUOTE_ALL)
             writer.writeheader()
             for ex in fail_examples:
                 writer.writerow({
-                    "index": ex["index"],
-                    "prompt": ex["prompt"].replace("\n", " ").replace("\r", " "),
-                    "prediction": ex["prediction"],
-                    "ground_truth": ex["ground_truth"],
-                    "output_text": ex["output_text"].replace("\n", " ").replace("\r", " "),
-                    "probabilities": json.dumps(ex["probabilities"])
-                })
+                "index": ex["index"],
+                "prompt": ex["prompt"].replace("\n", " ").replace("\r", " ").replace('"', '""'),
+                "prediction": int(ex["prediction"]),
+                "ground_truth": int(ex["ground_truth"]),
+                "output_text": ex["output_text"].replace("\n", " ").replace("\r", " ").replace('"', '""'),
+                "probabilities": json.dumps(ex["probabilities"])
+            })
         print(f"\nSaved {len(fail_examples)} failure cases to {failures_csv_path}")
 
     return final_accuracy, all_label_probs, cf
