@@ -13,6 +13,7 @@ from typing import List,Union
 import gc
 from accelerate.utils import release_memory
 from tqdm import tqdm
+import csv
 
 def ICL_evaluation(model: transformers.PreTrainedModel, 
                    prompt_list: List[str], 
@@ -25,7 +26,8 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
                    activations_path: str = "",
                    save_every: int = 100, 
                    save_dir: str = "results_tmp", 
-                   resume: bool = False) -> tuple[float, List[List[float]], List[List[int]]]:
+                   resume: bool = False,
+                   failures_csv_path: str = "") -> tuple[float, List[List[float]], List[List[int]]]:
     """
     Evaluate the ICL accuracy of the input model on the provided prompts.
 
@@ -42,6 +44,7 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
         save_every: number of samples to process before storing intermediate results
         save_dir: where to store intermediate results
         resume: whether to restart an interrupted evaluation from the last stored intermediate results
+        failures_csv_path: a path to a CSV file where to store misclassified examples
 
     Returns:
         (float) final classification accuracy
@@ -53,6 +56,8 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
     from main import tokenizer, device
     predictions, all_label_probs = [], []
     tokenizer.pad_token = tokenizer.eos_token
+
+    fail_examples = []
 
     # resume logic
     start_index = 0 
@@ -150,6 +155,19 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
             predictions.append(prediction_i)
             all_label_probs.append(predict_prob_list)
 
+            # optionally save failure examples
+            if failures_csv_path:
+                ground_truth = labels[index]
+                if prediction_i != ground_truth:
+                    fail_examples.append({
+                        "index": index,
+                        "prompt": prompt.replace("\n", "\\n"),
+                        "prediction": prediction_i,
+                        "ground_truth": ground_truth,
+                        "output_text": outputs_only.strip().replace("\n", "\\n"),
+                        "probabilities": str(predict_prob_list)
+                    })
+
             # free memory 
             del inputs, input_ids, attention_mask, output_dict, scores, answer_probs
             gc.collect()
@@ -178,6 +196,15 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
     print('Final classification accuracy:', acc)
     print(cf)
     final_accuracy = '\n\nclassification_accuracy: ' + str(acc)
+
+    # store fail examples on file
+    if fail_examples:
+        with open(failures_csv_path, mode="w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fail_examples[0].keys())
+            writer.writeheader()
+            writer.writerows(fail_examples)
+        print(f"\nSaved {len(fail_examples)} failure cases to {failures_csv_path}")
+
     return final_accuracy, all_label_probs, cf
 
 
