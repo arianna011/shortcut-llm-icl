@@ -38,6 +38,7 @@ parser.add_argument('--activations', type=str, default=None, help="Path to the f
 parser.add_argument('--layers', type=int, nargs='+', default=[], help="Layers to inject representantion control into") 
 parser.add_argument('--tokens', type=int, default=10, help="Max new tokens to generate") 
 parser.add_argument('--resume', type=str, choices=["true", "false"], default="false", help="Enable resume of previous interrupted evaluation")
+parser.add_argument('--fail_csv_path', type=str, default=None, help="Path to the file where to save failures examples")
 
 args = parser.parse_args()
 
@@ -58,6 +59,7 @@ activations = args.activations
 rep_layers = args.layers
 new_tokens = args.tokens
 eval_resume = args.resume.lower() == "true"
+fail_csv_path = args.fail_csv_path
 
 
 # MODEL SETUP
@@ -134,7 +136,7 @@ def main():
                                                     gt_ans_ids_list, dataset_name, 
                                                     repE=RepE, activations_path=activations,
                                                     gen_tokens=new_tokens,layers=rep_layers, 
-                                                    resume=eval_resume)
+                                                    resume=eval_resume, failures_csv_path=fail_csv_path)
     write_json(record_file_path, final_acc + str(cf))
 
 
