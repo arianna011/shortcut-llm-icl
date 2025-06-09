@@ -13,7 +13,7 @@ from typing import List,Union
 import gc
 from accelerate.utils import release_memory
 from tqdm import tqdm
-import csv
+import csv, json
 
 def ICL_evaluation(model: transformers.PreTrainedModel, 
                    prompt_list: List[str], 
@@ -202,7 +202,15 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
         with open(failures_csv_path, mode="w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fail_examples[0].keys())
             writer.writeheader()
-            writer.writerows(fail_examples)
+            for ex in fail_examples:
+                writer.writerow({
+                    "index": ex["index"],
+                    "prompt": ex["prompt"].replace("\n", " ").replace("\r", " "),
+                    "prediction": ex["prediction"],
+                    "ground_truth": ex["ground_truth"],
+                    "output_text": ex["output_text"].replace("\n", " ").replace("\r", " "),
+                    "probabilities": json.dumps(ex["probabilities"])
+                })
         print(f"\nSaved {len(fail_examples)} failure cases to {failures_csv_path}")
 
     return final_accuracy, all_label_probs, cf
