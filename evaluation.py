@@ -159,12 +159,12 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
             if failures_csv_path:
                 ground_truth = labels[index]
                 if prediction_i != ground_truth:
-                    fail_examples.append({
+                     fail_examples.append({
                         "index": index,
-                        "prompt": prompt.replace("\n", "\\n").replace('"', '""'),
+                        "prompt": prompt.replace('\n', ' ').replace('\r', ' ').strip(),
                         "prediction": int(prediction_i),
                         "ground_truth": int(ground_truth),
-                        "output_text": outputs_only.strip().replace("\n", "\\n").replace('"', '""'),
+                        "output_text": outputs_only.strip().replace('\n', ' ').replace('\r', ' '),
                         "probabilities": json.dumps(predict_prob_list)
                     })
 
@@ -205,10 +205,10 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
             for ex in fail_examples:
                 writer.writerow({
                 "index": ex["index"],
-                "prompt": ex["prompt"].replace("\n", " ").replace("\r", " ").replace('"', '""'),
+                "prompt": ex["prompt"].replace('\n', ' ').replace('\r', '').replace('"', "'"),
                 "prediction": int(ex["prediction"]),
                 "ground_truth": int(ex["ground_truth"]),
-                "output_text": ex["output_text"].replace("\n", " ").replace("\r", " ").replace('"', '""'),
+                "output_text": ex["output_text"].replace('\n', ' ').replace('\r', '').replace('"', "'"),
                 "probabilities": json.dumps(ex["probabilities"])
             })
         print(f"\nSaved {len(fail_examples)} failure cases to {failures_csv_path}")
