@@ -155,10 +155,6 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
             predictions.append(prediction_i)
             all_label_probs.append(predict_prob_list)
 
-            print("PROMPT", prompt)
-            print("PREDICTION", prediction_i)
-            print("OUTPUT TEXT", outputs_only)
-
             # optionally save failure examples
             if failures_csv_path:
                 ground_truth = labels[index]
@@ -217,7 +213,6 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
             })
         print(f"\nSaved {len(fail_examples)} failure cases to {failures_csv_path}")
     
-    print(fail_examples)
 
     return final_accuracy, all_label_probs, cf
 
