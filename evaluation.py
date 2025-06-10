@@ -205,13 +205,15 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
             for ex in fail_examples:
                 writer.writerow({
                 "index": ex["index"],
-                "prompt": ex["prompt"].replace('\n', ' ').replace('\r', '').replace('"', "'"),
-                "prediction": int(ex["prediction"]),
-                "ground_truth": int(ex["ground_truth"]),
-                "output_text": ex["output_text"].replace('\n', ' ').replace('\r', '').replace('"', "'"),
+                "prompt": ex["prompt"],
+                "prediction": ex["prediction"],
+                "ground_truth": ex["ground_truth"],
+                "output_text": ex["output_text"],
                 "probabilities": json.dumps(ex["probabilities"])
             })
         print(f"\nSaved {len(fail_examples)} failure cases to {failures_csv_path}")
+    
+    print(fail_examples)
 
     return final_accuracy, all_label_probs, cf
 
