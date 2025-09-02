@@ -89,7 +89,7 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
           layers=layers, # layers to inject control in
           control_method=control_method)
       
-      # load pre-saved direction vectors that represent the honesty concept
+      # load pre-saved direction vectors
       activations = torch.load(activations_path)
 
     # resume an interrupted evaluation
