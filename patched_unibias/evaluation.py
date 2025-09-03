@@ -14,7 +14,7 @@ import gc
 from accelerate.utils import release_memory
 from tqdm import tqdm
 import csv, json
-from representation_engineering.repe import repe_pipeline_registry
+from representation_engineering import repe_pipeline_registry
 
 def ICL_evaluation(model: transformers.PreTrainedModel, 
                    tokenizer: transformers.AutoTokenizer,
