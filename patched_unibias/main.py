@@ -1,5 +1,7 @@
 import os
 import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
+
 import json
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 import transformers
@@ -12,7 +14,7 @@ from pathlib import Path
 #from FFN_manipulate import *
 #from attention_manipulate import *
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
+
 
 # INITIAL ARGUMENTS
 parser = argparse.ArgumentParser(description='Initial arguments.')
