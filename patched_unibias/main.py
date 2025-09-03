@@ -132,7 +132,7 @@ def main():
                "num shot: " + str(num_shot) + " new tokens: " + str(new_tokens) + " repE: " + str(RepE) + s)
 
     # evaluate performance
-    final_acc, all_label_probs, cf = ICL_evaluation(model, prompt_list, test_labels, 
+    final_acc, all_label_probs, cf = ICL_evaluation(model, tokenizer, device, prompt_list, test_labels, 
                                                     gt_ans_ids_list, dataset_name, 
                                                     repE=RepE, activations_path=activations,
                                                     gen_tokens=new_tokens,layers=rep_layers, 

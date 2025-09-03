@@ -14,8 +14,11 @@ import gc
 from accelerate.utils import release_memory
 from tqdm import tqdm
 import csv, json
+from representation_engineering.repe import repe_pipeline_registry
 
 def ICL_evaluation(model: transformers.PreTrainedModel, 
+                   tokenizer: transformers.AutoTokenizer,
+                   device: torch.device,
                    prompt_list: List[str], 
                    labels: Union[List[int], List[str]], 
                    gt_ans_ids_list: List[List[int]], 
@@ -33,6 +36,8 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
 
     Params:
         model: the LLM to evaluate
+        tokenizer: the tokenizer to use
+        device: the device to use
         prompt_list: a list of prompts to feed to the model
         labels: ground truth labels for the task at hand
         gt_ans_ids_list: list of possible token ids for the representation of each ground truth label
@@ -52,8 +57,6 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
         (list[list[int]]) confusion matrix
 
     """
-    
-    from main import tokenizer, device
     predictions, all_label_probs = [], []
     tokenizer.pad_token = tokenizer.eos_token
 
@@ -72,11 +75,6 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
     if repE:
       
       print("Using Representation Engineering")
-
-      # imports from the repe code
-      base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-      sys.path.append(os.path.join(base_dir, 'representation_engineering'))
-      from repe import repe_pipeline_registry
       repe_pipeline_registry()
 
       # initialize a control pipeline for Mistral
