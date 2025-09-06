@@ -58,28 +58,17 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
 
     """
     predictions, all_label_probs = [], []
-    tokenizer.pad_token = tokenizer.eos_token
-
     fail_examples = []
-
-    # resume logic
-    start_index = 0 
-    model_name = model.name_or_path.split("/")[-1] 
-    resume_dir = save_dir+"_"+model_name+"_"+dataset_name
-    if repE:
-      resume_dir += "_repE"
-    os.makedirs(resume_dir, exist_ok=True)
+    tokenizer.pad_token = tokenizer.eos_token
 
     model.eval()
 
-    if repE:
-      
+    if repE:  
       print("Using Representation Engineering")
       repe_pipeline_registry()
 
-      # initialize a control pipeline for Mistral
+      # initialize a control pipeline
       control_method="reading_vec" # add a scaled version of a direction vector to internal activations during forward pass
-
       rep_control_pipeline = pipeline(
           "rep-control",
           model=model,
@@ -90,21 +79,8 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
       # load pre-saved direction vectors
       activations = torch.load(activations_path)
 
-    # resume an interrupted evaluation
-    if resume:
-        result_files = sorted(
-            [f for f in os.listdir(resume_dir) if f.endswith(".pkl")],
-            key=lambda x: int(x.split("_")[1].split(".")[0])
-        )
-        if result_files:
-            last_file = result_files[-1]
-            with open(os.path.join(resume_dir, last_file), "rb") as f:
-                data = pickle.load(f)
-                predictions = data["predictions"]
-                all_label_probs = data["all_label_probs"]
-                start_index = data["indices"][-1] + 1
-            print(f"Resuming from index {start_index} using {last_file}")
-
+    # resume interrupted evaluation if requested
+    resume_dir, start_index, predictions, all_label_probs = intialize_resume_logic(resume, model, dataset_name, save_dir, repE)
 
     for index in tqdm(range(start_index, len(prompt_list)), desc="Processing"):
         
@@ -173,7 +149,60 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
             release_memory(model)
        
         # save partial results
-        if (index + 1) % save_every == 0 or index == len(prompt_list) - 1:
+        store_partial_results(index, save_every, resume_dir, len(prompt_list), predictions, all_label_probs)
+        tqdm.write(f"Saved checkpoint at step {index + 1}")
+
+        # evaluate intermediate performance
+        cf = confusion_matrix(labels[:len(predictions)], predictions)
+        acc, _ = classification_accuracy(predictions, labels[:len(predictions)])
+        tqdm.write(f"Partial accuracy: {acc}")
+
+    acc, _ = classification_accuracy(predictions, labels[:len(predictions)])
+    print('Final classification accuracy:', acc)
+    print(cf)
+    final_accuracy = '\n\nclassification_accuracy: ' + str(acc)
+
+    # optionally store fail examples on file
+    if fail_examples:
+        store_fail_examples(fail_examples, failures_csv_path)
+        print(f"\nSaved {len(fail_examples)} failure cases to {failures_csv_path}")
+
+    return final_accuracy, all_label_probs, cf
+
+
+def intialize_resume_logic(resume, model, dataset_name, save_dir, repE):
+    
+    # setup directory to store intermediate results
+    model_name = model.name_or_path.split("/")[-1] 
+    resume_dir = save_dir + "_" + model_name + "_" + dataset_name
+    if repE:
+      resume_dir += "_repE"
+    os.makedirs(resume_dir, exist_ok=True)
+
+    start_index = 0
+    predictions = None
+    all_label_probs = None
+
+    if resume:
+        # resume an interrupted evaluation
+        result_files = sorted(
+            [f for f in os.listdir(resume_dir) if f.endswith(".pkl")],
+            key=lambda x: int(x.split("_")[1].split(".")[0]) # results stored as 'results_{index + 1}.pkl'
+        )
+        if result_files:
+            last_file = result_files[-1]
+            with open(os.path.join(resume_dir, last_file), "rb") as f:
+                data = pickle.load(f)
+                predictions = data["predictions"]
+                all_label_probs = data["all_label_probs"]
+                start_index = data["indices"][-1] + 1
+            print(f"Resuming from index {start_index} using {last_file}")
+
+    return resume_dir, start_index, predictions, all_label_probs
+
+def store_partial_results(index, save_every, resume_dir, prompt_list_len, predictions, all_label_probs):
+
+    if (index + 1) % save_every == 0 or index == prompt_list_len - 1:
             partial_file = os.path.join(resume_dir, f"results_{index + 1}.pkl")
             with open(partial_file, "wb") as f:
                 pickle.dump({
@@ -181,23 +210,10 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
                     "all_label_probs": all_label_probs,
                     "indices": list(range(index + 1))
                 }, f)
-            tqdm.write(f"Saved checkpoint at step {index + 1} → {partial_file}")
 
-            # evaluate intermediate performance
-            cf = confusion_matrix(labels[:len(predictions)], predictions)
-            normalized_cf = cf / cf.sum(axis=1, keepdims=True)
-            tqdm.write(f"Partial normalized confusion matrix:\n{np.array2string(normalized_cf, precision=2)}")
-            acc, _ = classification_accuracy(predictions, labels[:len(predictions)])
-            tqdm.write(f"Partial accuracy: {acc}")
+def store_fail_examples(fail_examples, failures_csv_path):
 
-    acc, _ = classification_accuracy(predictions, labels[:len(predictions)])
-    print('Final classification accuracy:', acc)
-    print(cf)
-    final_accuracy = '\n\nclassification_accuracy: ' + str(acc)
-
-    # store fail examples on file
-    if fail_examples:
-        with open(failures_csv_path, mode="w", encoding="utf-8", newline="") as f:
+    with open(failures_csv_path, mode="w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fail_examples[0].keys(), quoting=csv.QUOTE_ALL)
             writer.writeheader()
             for ex in fail_examples:
@@ -209,12 +225,6 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
                 "output_text": ex["output_text"],
                 "probabilities": json.dumps(ex["probabilities"])
             })
-        print(f"\nSaved {len(fail_examples)} failure cases to {failures_csv_path}")
-    
-
-    return final_accuracy, all_label_probs, cf
-
-
 
 def calibration_evaluation(model, all_label_probs, gt_ans_ids_list, test_sentences, test_labels, demonstration):
     from main import record_file_path, dataset_name, seed_value
