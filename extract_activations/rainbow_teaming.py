@@ -359,13 +359,13 @@ class GeminiLLM(BaseLLM):
 class HuggingFaceLLM(BaseLLM):
     """LLM loaded from Hugging Face."""
 
-    def __init__(self, model_name: str, hf_token: str, quantize: bool = True, use_auto_device_map=True):
+    def __init__(self, model_name: str, hf_token: str, quantize: bool = True, use_auto_device_map: bool = True):
 
         self.model_name = model_name
         self.hf_token = hf_token
 
         model_kwargs = {
-            "use_auth_token": hf_token,
+            "token": hf_token,
         }
 
         if quantize:
@@ -380,7 +380,7 @@ class HuggingFaceLLM(BaseLLM):
         if use_auto_device_map:
             model_kwargs["device_map"] = "auto"
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=hf_token)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token)
         self.model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
         
     
