@@ -387,9 +387,9 @@ class HuggingFaceLLM(BaseLLM):
 
         if use_auto_device_map:
             self.model_kwargs["device_map"] = "auto"
-            self.model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, **self.model_kwargs)
+            self.model = AutoModelForCausalLM.from_pretrained(model_name, **self.model_kwargs)
         else:
-            self.model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, **self.model_kwargs).to(self.device)
+            self.model = AutoModelForCausalLM.from_pretrained(model_name, **self.model_kwargs).to(self.device)
         
     def complete(self, prompt: str, max_tokens: int = 512, temperature: float = 1.0) -> str:
             
