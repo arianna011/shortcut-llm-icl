@@ -41,6 +41,9 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from datasets import load_dataset
 import yaml
 import fnmatch
+import torch
+import gc
+from accelerate.utils import release_memory
 
 
 # Feature Descriptors ================================================================================================
@@ -296,13 +299,13 @@ class BaseLLM:
     """Abstract interface for all LLM adapters."""
     name: str = "base"
 
-    def complete(self, prompt: str, max_tokens: int = 512, temperature: float = 0.7) -> str:
+    def complete(self, prompt: str, max_tokens: int = 512, temperature: float = 1.0) -> str:
         raise NotImplementedError
 
 class EchoLLM(BaseLLM):
     """Echo-only LLM (for debugging)."""
     name = "echo"
-    def complete(self, prompt: str, max_tokens: int = 512, temperature: float = 0.7) -> str:
+    def complete(self, prompt: str, max_tokens: int = 512, temperature: float = 1.0) -> str:
         return f"[ECHO]\n{prompt[:500]}\n[/ECHO]"
 
 class GeminiLLM(BaseLLM):
@@ -334,7 +337,7 @@ class GeminiLLM(BaseLLM):
             pass
         return "\n".join(texts).strip()
 
-    def complete(self, prompt: str, max_tokens: int = 512, temperature: float = 0.7) -> str:
+    def complete(self, prompt: str, max_tokens: int = 512, temperature: float = 1.0) -> str:
         try:
             res = self.model.generate_content(
                 prompt,
@@ -353,12 +356,75 @@ class GeminiLLM(BaseLLM):
             fr = None
         raise ValueError(f"Gemini returned no text, finish_reason={fr}.")
 
+class HuggingFaceLLM(BaseLLM):
+    """LLM loaded from Hugging Face."""
+
+    def __init__(self, model_name: str, hf_token: str = None, quantize: bool = True, use_auto_device_map=True):
+
+        self.model_name = model_name
+        self.quantize = quantize
+        self.use_auto_device_map = use_auto_device_map
+        self.model = None
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token if hf_token else None)
+        
+        self.device = torch.device("cuda:0")
+        self.model_kwargs = {
+            "torch_dtype": torch.float16 if torch.cuda.is_available() else torch.float32,
+            "low_cpu_mem_usage": True
+        }
+
+        if hf_token:
+            self.model_kwargs["token"] = hf_token
+
+        if quantize:
+            bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_use_double_quant=True,            
+                bnb_4bit_quant_type="nf4",                  
+                bnb_4bit_compute_dtype=torch.float16
+            )
+            self.model_kwargs["quantization_config"] = bnb_config
+
+        if use_auto_device_map:
+            self.model_kwargs["device_map"] = "auto"
+            self.model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, **self.model_kwargs)
+        else:
+            self.model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, **self.model_kwargs).to(self.device)
+        
+    def complete(self, prompt: str, max_tokens: int = 512, temperature: float = 1.0) -> str:
+            
+        self.model.eval()
+        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
+        input_ids = inputs["input_ids"]
+        attention_mask = inputs["attention_mask"]
+
+        prompt_length = len(self.tokenizer.decode(
+                            input_ids[0],
+                            skip_special_tokens=True))
+        output_dict = self.model.generate(input_ids=inputs["input_ids"], 
+                                          attention_mask=attention_mask,
+                                          do_sample = True,
+                                          temperature = temperature,
+                                          max_new_tokens=max_tokens, 
+                                          return_dict_in_generate=True, 
+                                          output_scores=False, 
+                                          pad_token_id=self.tokenizer.eos_token_id)
+              
+        outputs = output_dict['sequences'] # token IDs of the prompt + generated text
+        outputs = self.tokenizer.batch_decode(outputs.detach().cpu().numpy(), skip_special_tokens=True)[0] #batch size=1
+        outputs_only = outputs[prompt_length:]
+        gc.collect()
+        torch.cuda.empty_cache()
+        release_memory(self.model)
+
+        return outputs_only
+
 
 @dataclass
 class LLMRegistry:
     """Container to hold mutator, target and judge LLMs."""
     mutator: BaseLLM
-    target: transformers.PreTrainedModel
+    target: BaseLLM
     judge: BaseLLM
 
 
@@ -493,24 +559,24 @@ class RainbowConfig:
 # =============================
 # Example configuration (entry point)
 # =============================
-if __name__ == "__main__":
-    random.seed(42)
+# if __name__ == "__main__":
+#     random.seed(42)
 
-    API = "AIzaSyBuqsCfDar-hHfpFGWmTI7jawPHEwgsnH4"
+#     API = "AIzaSyBuqsCfDar-hHfpFGWmTI7jawPHEwgsnH4"
 
-    schema = DescriptorSchema(features=[
-    Feature(name="shortcut", values=["+", "-"]),
-    Feature(name="length", values=["short", "medium", "long"])
-    ])
+#     schema = DescriptorSchema(features=[
+#     Feature(name="shortcut", values=["+", "-"]),
+#     Feature(name="length", values=["short", "medium", "long"])
+#     ])
 
-    # Choose LLMs
-    try:
-        mutator = GeminiLLM(API, "gemini-2.5-flash","you are a useful assistant mutator")
-        judge = GeminiLLM(API, "gemini-2.5-flash","you are a useful assistant judge")
-    except Exception as e:
-        print(e)
+#     # Choose LLMs
+#     try:
+#         mutator = GeminiLLM(API, "gemini-2.5-flash","you are a useful assistant mutator")
+#         judge = GeminiLLM(API, "gemini-2.5-flash","you are a useful assistant judge")
+#     except Exception as e:
+#         print(e)
 
-    print(mutator.complete("Hello. How are you?"))
+#     print(mutator.complete("Hello. How are you?"))
 
     
 
