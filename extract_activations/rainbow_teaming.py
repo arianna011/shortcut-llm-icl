@@ -359,39 +359,31 @@ class GeminiLLM(BaseLLM):
 class HuggingFaceLLM(BaseLLM):
     """LLM loaded from Hugging Face."""
 
-    def __init__(self, model_name: str, hf_token: str = None, quantize: bool = True, use_auto_device_map=True):
+    def __init__(self, model_name: str, hf_token: str, quantize: bool = True, use_auto_device_map=True):
 
         self.model_name = model_name
-        self.quantize = quantize
-        self.use_auto_device_map = use_auto_device_map
-        self.model = None
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token if hf_token else None)
-        
-        self.device = torch.device("cuda:0")
-        self.model_kwargs = {
-            "torch_dtype": torch.float16 if torch.cuda.is_available() else torch.float32,
-            "low_cpu_mem_usage": True
-        }
+        self.hf_token = hf_token
 
-        if hf_token:
-            self.model_kwargs["token"] = hf_token
+        model_kwargs = {
+            "use_auth_token": hf_token,
+        }
 
         if quantize:
             bnb_config = BitsAndBytesConfig(
                 load_in_4bit=True,
-                bnb_4bit_use_double_quant=True,            
-                bnb_4bit_quant_type="nf4",                  
-                bnb_4bit_compute_dtype=torch.float16
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype="bfloat16",
             )
-        else:
-            bnb_config = None
+            model_kwargs["quantization_config"] = bnb_config
 
         if use_auto_device_map:
-            self.model_kwargs["device_map"] = "auto"
-            self.model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, **self.model_kwargs)
-        else:
-            self.model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, **self.model_kwargs).to(self.device)
+            model_kwargs["device_map"] = "auto"
+
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=hf_token)
+        self.model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
         
+    
     def complete(self, prompt: str, max_tokens: int = 512, temperature: float = 1.0) -> str:
             
         self.model.eval()
