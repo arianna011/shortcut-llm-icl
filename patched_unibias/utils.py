@@ -136,8 +136,8 @@ def prepare_dataset_test(dataset_name, content_free_inputs=None, demonstration=N
     
     if dataset_name == 'mnli':
         prompt_list = []
-        dataset_test = load_dataset("nyu-mll/glue", dataset_name, split="validation_matched", trust_remote_code=True)[:3000]
-        examples = load_dataset("nyu-mll/glue", dataset_name, split="train", trust_remote_code=True)
+        dataset_test = load_dataset("nyu-mll/glue", dataset_name, split="validation_matched")[:3000]
+        examples = load_dataset("nyu-mll/glue", dataset_name, split="train")
         test_premise = dataset_test['premise']
         test_hypothesis = dataset_test['hypothesis']
         test_labels = dataset_test['label']

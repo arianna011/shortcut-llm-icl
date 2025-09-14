@@ -107,7 +107,7 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
     
     if task == Task.NLI:
 
-        examples_dataset = load_dataset("nyu-mll/glue", task_dataset, split="train", trust_remote_code=True)
+        examples_dataset = load_dataset("nyu-mll/glue", task_dataset, split="train")
         premises = examples_dataset['premise']
         hypotheses = examples_dataset['hypothesis']
         labels = examples_dataset['label']
@@ -144,7 +144,7 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
         raise NotImplementedError
     
 
-def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int, model: BaseLLM, num_shot: int) -> pd.DataFrame:
+def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int, model: BaseLLM, num_shot: int, seed: int = 42) -> pd.DataFrame:
     """
     Given a dataset containing pairs (clean, dirty) of NLP prompts with and without an injected shortcut,
     extract a desired number of prompt pairs where the input model succeed to peform the given task
@@ -161,12 +161,18 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
         a dataset of the desired size containing the selected prompts
     """
 
+    assert paired_dataset.size >= size
     add_context = get_ICL_context_func(task, num_shot)
     selected_rows = []
+    count = 0
 
     if task == Task.NLI:
 
-        for _, row in paired_dataset.iterrows():
+        for _, row in paired_dataset.sample(frac=1, random_state=seed).iterrows():
+
+            if count >= size:
+                break
+
             clean_prompt = add_context(row["premise_clean"], row["hypothesis_clean"])
             dirty_prompt = add_context(row["premise_dirty"], row["hypothesis_dirty"])
             gold = row["gold_label"]
@@ -176,13 +182,10 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
             pred_dirty = model.complete(dirty_prompt, max_tokens=10).lower().strip()
 
             if pred_clean == gold and pred_dirty != gold:
+                count += 1
                 selected_rows.append(row)
 
-        if len(selected_rows) > size:
-            selected_rows = random.sample(selected_rows, size)
-
         return pd.DataFrame(selected_rows).reset_index(drop=True)
-
 
     else:
         raise NotImplementedError
