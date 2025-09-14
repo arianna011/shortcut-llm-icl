@@ -144,7 +144,8 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
         raise NotImplementedError
     
 
-def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int, model: BaseLLM, num_shot: int, seed: int = 42) -> pd.DataFrame:
+def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int, model: BaseLLM, 
+                            num_shot: int, seed: int = 42, debug: bool = False) -> pd.DataFrame:
     """
     Given a dataset containing pairs (clean, dirty) of NLP prompts with and without an injected shortcut,
     extract a desired number of prompt pairs where the input model succeed to peform the given task
@@ -180,6 +181,10 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
             # get model predictions
             pred_clean = model.complete(clean_prompt, max_tokens=10).lower().strip()
             pred_dirty = model.complete(dirty_prompt, max_tokens=10).lower().strip()
+            if debug:
+                print(f"---- Sample {i}")
+                print(f'Clean prompt: {clean_prompt}\n Answer: {pred_clean}\n')
+                print(f'Dirty prompt: {dirty_prompt}\n Answer: {pred_dirty}\n')
 
             if pred_clean == gold and pred_dirty != gold:
                 count += 1
