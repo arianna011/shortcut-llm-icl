@@ -168,7 +168,7 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
 
     if task == Task.NLI:
 
-        for _, row in paired_dataset.sample(frac=1, random_state=seed).iterrows():
+        for i, row in paired_dataset.sample(frac=1, random_state=seed).iterrows():
 
             if count >= size:
                 break
@@ -184,6 +184,7 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
             if pred_clean == gold and pred_dirty != gold:
                 count += 1
                 selected_rows.append(row)
+                print(f"Extracted sample at {i}")
 
         return pd.DataFrame(selected_rows).reset_index(drop=True)
 
