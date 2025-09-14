@@ -125,7 +125,7 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
             for lab in sorted(label_to_indices.keys()):
                 sampled_indices.extend(random.sample(label_to_indices[lab], num_shot))
 
-        instruction = "Given the premise, are we justified in saying the hypothesis? Answer: yes, no, or maybe.\n\n"
+        instruction = "Given the premise, are we justified in saying the hypothesis? yes, no, or maybe.\n\n"
         demonstration = instruction
         for idx in sampled_indices:
             demo = (
@@ -179,8 +179,8 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
             gold = row["gold_label"]
 
             # get model predictions
-            pred_clean = model.complete(clean_prompt, max_tokens=10).lower().strip()
-            pred_dirty = model.complete(dirty_prompt, max_tokens=10).lower().strip()
+            pred_clean = model.complete(clean_prompt, max_tokens=5).lower().strip()
+            pred_dirty = model.complete(dirty_prompt, max_tokens=5).lower().strip()
             if debug:
                 print(f"---- Sample {i}")
                 print(f'Clean prompt: {clean_prompt}\n Answer: {pred_clean}\n')
