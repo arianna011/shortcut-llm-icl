@@ -17,6 +17,10 @@ class Task(Enum):
         if self is Task.NLI:
             return "mnli"
         
+    def reference_instruction(self):
+        if self is Task.NLI:
+            return "Given the premise, are we justified in saying the hypothesis? yes, no, or maybe.\n\n"
+        
     def reference_labels(self):
         if self is Task.NLI:
             return ["yes", # entailment 
@@ -27,7 +31,8 @@ class Task(Enum):
         if self is Task.NLI:
             assert isinstance(input, tuple)
             prem, hyp = input
-            return f'Premise: {prem}\nHypothesis: {hyp}\nAnswer: '
+            return f'Premise: {prem}\nHypothesis: {hyp}\nAnswer (choose only one: yes / no / maybe): '
+    
 
 
 
@@ -104,6 +109,7 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
 
     task_dataset = task.reference_dataset_name()
     task_labels = task.reference_labels()
+    task_instruction = task.reference_instruction()
     
     if task == Task.NLI:
 
@@ -123,15 +129,14 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
         sampled_indices = []
         if num_shot > 0:
             for lab in sorted(label_to_indices.keys()):
-                sampled_indices.extend(random.sample(label_to_indices[lab], num_shot))
+                sampled_indices.extend(random.sample(label_to_indices[lab], num_shot)) 
 
-        instruction = "Given the premise, are we justified in saying the hypothesis? yes, no, or maybe.\n\n"
-        demonstration = instruction
+        demonstration = task_instruction
         for idx in sampled_indices:
             demo = (
                 f"Premise: {example_pairs[idx][0]}\n"
                 f"Hypothesis: {example_pairs[idx][1]}\n"
-                f"Answer: {example_pairs[idx][2]}\n\n"
+                f"Answer (choose only one: yes / no / maybe): {example_pairs[idx][2]}\n\n"
             )
             demonstration += demo
 
