@@ -174,10 +174,10 @@ def prepare_dataset_test(dataset_name, content_free_inputs=None, demonstration=N
                 instruction = ''
             demonstration += instruction
             for rand_index in rand_example_sample_index:
-                example_i =  'Premise: ' + example_pairs[rand_index][0] + '\nHypothesis: ' + example_pairs[rand_index][1] + instruction + '\nAnswer: ' + example_pairs[rand_index][2] + '\n\n'
+                example_i =  'Premise: ' + example_pairs[rand_index][0] + '\nHypothesis: ' + example_pairs[rand_index][1] + '\nAnswer: ' + example_pairs[rand_index][2] + '\n\n'
                 demonstration += example_i
             for premise, hypothesis in zip(test_premise, test_hypothesis):
-                prompt = demonstration + 'Premise: ' + premise + '\nHypothesis: ' + hypothesis + instruction + '\n' + 'Answer:'
+                prompt = demonstration + 'Premise: ' + premise + '\nHypothesis: ' + hypothesis + '\n' + 'Answer: '
                 prompt_list.append(prompt)
         return prompt_list, test_labels, demonstration, test_sentences
     

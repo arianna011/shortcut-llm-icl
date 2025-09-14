@@ -306,7 +306,7 @@ class EchoLLM(BaseLLM):
     """Echo-only LLM (for debugging)."""
     name = "echo"
     def complete(self, prompt: str, max_tokens: int = 512, temperature: float = 1.0) -> str:
-        return f"[ECHO]\n{prompt[:500]}\n[/ECHO]"
+        return f"[ECHO]\n{prompt[:max_tokens]}\n[/ECHO]"
 
 class GeminiLLM(BaseLLM):
     """Google Gemini client."""
