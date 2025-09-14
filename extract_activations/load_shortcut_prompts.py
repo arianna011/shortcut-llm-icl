@@ -194,10 +194,10 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
 
             # get model predictions
             gen_clean = model.complete(clean_prompt, max_tokens=max_tokens).strip()
-            pred_clean = match_gen_to_label(gen_clean)
+            pred_clean = match_gen_to_label(task, gen_clean)
             gen_dirty = model.complete(dirty_prompt, max_tokens=max_tokens).strip()
-            pred_dirty = match_gen_to_label(gen_dirty)
-            
+            pred_dirty = match_gen_to_label(task, gen_dirty)
+
             if debug:
                 print(f"---- Sample {i}")
                 print(f'Clean prompt: {clean_prompt}\n Answer: {pred_clean}\n')
