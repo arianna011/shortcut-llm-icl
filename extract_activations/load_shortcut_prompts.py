@@ -2,7 +2,7 @@ import pandas as pd
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import os
 import glob
-from pandasgui import show
+#from pandasgui import show
 from enum import Enum
 from collections.abc import Callable
 import torch
@@ -195,4 +195,4 @@ if __name__ == '__main__':
     df_shortcut = load_nli_shortcuts_from_tsv("data/ShortcutSuite/dev_matched_negation.tsv")
     df = create_paired_dataset(df_standard, df_shortcut)
     selected_df = select_shortcut_prompts(df, Task.NLI, size=10, model=EchoLLM(), num_shot=1)
-    show(selected_df)
+    #show(selected_df)
