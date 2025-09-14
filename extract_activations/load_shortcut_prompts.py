@@ -8,7 +8,7 @@ from collections.abc import Callable
 import torch
 from datasets import load_dataset
 import random
-from rainbow_teaming import BaseLLM, EchoLLM
+from extract_activations.rainbow_teaming import BaseLLM, EchoLLM
 
 class Task(Enum):
     NLI = 0
