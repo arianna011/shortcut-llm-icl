@@ -145,7 +145,7 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
     
 
 def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int, model: BaseLLM, 
-                            num_shot: int, seed: int = 42, debug: bool = False) -> pd.DataFrame:
+                            num_shot: int, max_tokens: int = 5, seed: int = 42, debug: bool = False) -> pd.DataFrame:
     """
     Given a dataset containing pairs (clean, dirty) of NLP prompts with and without an injected shortcut,
     extract a desired number of prompt pairs where the input model succeed to peform the given task
@@ -179,8 +179,8 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
             gold = row["gold_label"]
 
             # get model predictions
-            pred_clean = model.complete(clean_prompt, max_tokens=5).lower().strip()
-            pred_dirty = model.complete(dirty_prompt, max_tokens=5).lower().strip()
+            pred_clean = model.complete(clean_prompt, max_tokens=max_tokens).lower().strip()
+            pred_dirty = model.complete(dirty_prompt, max_tokens=max_tokens).lower().strip()
             if debug:
                 print(f"---- Sample {i}")
                 print(f'Clean prompt: {clean_prompt}\n Answer: {pred_clean}\n')
