@@ -9,6 +9,7 @@ import torch
 from datasets import load_dataset
 import random
 from extract_activations import BaseLLM, EchoLLM
+import re
 
 class Task(Enum):
     NLI = 0
@@ -149,6 +150,14 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
         raise NotImplementedError
     
 
+
+def match_gen_to_label(task: Task, gen: str) -> str:
+    gen = gen.lower()
+    for label in task.reference_labels():
+        if re.search(rf"\b{label}\b", gen):
+            return label
+    return None
+
 def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int, model: BaseLLM, 
                             num_shot: int, max_tokens: int = 5, seed: int = 42, debug: bool = False) -> pd.DataFrame:
     """
@@ -184,8 +193,11 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
             gold = row["gold_label"]
 
             # get model predictions
-            pred_clean = model.complete(clean_prompt, max_tokens=max_tokens).lower().strip()
-            pred_dirty = model.complete(dirty_prompt, max_tokens=max_tokens).lower().strip()
+            gen_clean = model.complete(clean_prompt, max_tokens=max_tokens).strip()
+            pred_clean = match_gen_to_label(gen_clean)
+            gen_dirty = model.complete(dirty_prompt, max_tokens=max_tokens).strip()
+            pred_dirty = match_gen_to_label(gen_dirty)
+            
             if debug:
                 print(f"---- Sample {i}")
                 print(f'Clean prompt: {clean_prompt}\n Answer: {pred_clean}\n')
