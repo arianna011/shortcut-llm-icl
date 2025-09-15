@@ -185,7 +185,7 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
 
     if task == Task.NLI:
 
-        with tqdm(total=size, desc="Selecting prompts") as pbar:
+        with tqdm(total=size, desc="Selecting prompts", ncols=100) as pbar:
             for i, row in paired_dataset.sample(frac=1, random_state=seed).iterrows():
 
                 if count >= size:
@@ -202,15 +202,15 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
                 pred_dirty = match_gen_to_label(task, gen_dirty)
 
                 if debug:
-                    print(f"---- Sample {i}")
-                    print(f'Clean prompt: {clean_prompt}\n {pred_clean}\n')
-                    print(f'Dirty prompt: {dirty_prompt}\n {pred_dirty}\n')
+                    tqdm.write(f"---- Sample {i}")
+                    tqdm.write(f'Clean prompt: {clean_prompt}\n {pred_clean}\n')
+                    tqdm.write(f'Dirty prompt: {dirty_prompt}\n {pred_dirty}\n')
 
-                if pred_clean == gold and pred_dirty != gold and pred_dirty != None:
+                if (pred_clean == gold) and (pred_dirty != gold) and (pred_dirty != None):
                     count += 1
                     selected_rows.append(row)
                     pbar.update(1)
-                    if debug: print(f"Extracted sample {i}")
+                    if debug: tqdm.write(f"Extracted sample {i}")
 
         return pd.DataFrame(selected_rows).reset_index(drop=True)
 
