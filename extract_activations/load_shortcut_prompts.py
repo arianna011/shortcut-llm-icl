@@ -2,14 +2,16 @@ import pandas as pd
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import os
 import glob
-#from pandasgui import show
+from pandasgui import show
 from enum import Enum
 from collections.abc import Callable
 import torch
 from datasets import load_dataset
 import random
+#from rainbow_teaming import BaseLLM, EchoLLM
 from extract_activations import BaseLLM, EchoLLM
 import re
+from tqdm import tqdm
 
 class Task(Enum):
     NLI = 0
@@ -183,30 +185,32 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
 
     if task == Task.NLI:
 
-        for i, row in paired_dataset.sample(frac=1, random_state=seed).iterrows():
+        with tqdm(total=size, desc="Selecting prompts") as pbar:
+            for i, row in paired_dataset.sample(frac=1, random_state=seed).iterrows():
 
-            if count >= size:
-                break
+                if count >= size:
+                    break
 
-            clean_prompt = add_context(row["premise_clean"], row["hypothesis_clean"])
-            dirty_prompt = add_context(row["premise_dirty"], row["hypothesis_dirty"])
-            gold = row["gold_label"]
+                clean_prompt = add_context(row["premise_clean"], row["hypothesis_clean"])
+                dirty_prompt = add_context(row["premise_dirty"], row["hypothesis_dirty"])
+                gold = row["gold_label"]
 
-            # get model predictions
-            gen_clean = model.complete(clean_prompt, max_tokens=max_tokens).strip()
-            pred_clean = match_gen_to_label(task, gen_clean)
-            gen_dirty = model.complete(dirty_prompt, max_tokens=max_tokens).strip()
-            pred_dirty = match_gen_to_label(task, gen_dirty)
+                # get model predictions
+                gen_clean = model.complete(clean_prompt, max_tokens=max_tokens).strip()
+                pred_clean = match_gen_to_label(task, gen_clean)
+                gen_dirty = model.complete(dirty_prompt, max_tokens=max_tokens).strip()
+                pred_dirty = match_gen_to_label(task, gen_dirty)
 
-            if debug:
-                print(f"---- Sample {i}")
-                print(f'Clean prompt: {clean_prompt}\n {pred_clean}\n')
-                print(f'Dirty prompt: {dirty_prompt}\n {pred_dirty}\n')
+                if debug:
+                    print(f"---- Sample {i}")
+                    print(f'Clean prompt: {clean_prompt}\n {pred_clean}\n')
+                    print(f'Dirty prompt: {dirty_prompt}\n {pred_dirty}\n')
 
-            if pred_clean == gold and pred_dirty != gold:
-                count += 1
-                selected_rows.append(row)
-                print(f"Extracted sample {i}")
+                if pred_clean == gold and pred_dirty != gold and pred_dirty != None:
+                    count += 1
+                    selected_rows.append(row)
+                    pbar.update(1)
+                    if debug: print(f"Extracted sample {i}")
 
         return pd.DataFrame(selected_rows).reset_index(drop=True)
 
@@ -220,5 +224,5 @@ if __name__ == '__main__':
     df_standard = load_nli_shortcuts_from_tsv("data/ShortcutSuite/dev_matched.tsv")
     df_shortcut = load_nli_shortcuts_from_tsv("data/ShortcutSuite/dev_matched_negation.tsv")
     df = create_paired_dataset(df_standard, df_shortcut)
-    selected_df = select_shortcut_prompts(df, Task.NLI, size=10, model=EchoLLM(), num_shot=1)
-    #show(selected_df)
+    #selected_df = select_shortcut_prompts(df, Task.NLI, size=10, model=EchoLLM(), num_shot=1)
+    #show(df)
