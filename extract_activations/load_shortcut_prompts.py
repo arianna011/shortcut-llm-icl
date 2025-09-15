@@ -179,7 +179,7 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
     """
 
     assert paired_dataset.size >= size
-    add_context = get_ICL_context_func(task, num_shot)
+    add_context = get_ICL_context_func(task, num_shot, seed=seed)
     selected_rows = []
     count = 0
 
