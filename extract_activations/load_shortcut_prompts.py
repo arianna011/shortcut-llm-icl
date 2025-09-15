@@ -22,11 +22,11 @@ class Task(Enum):
         if self is Task.NLI:
             return "Given the premise, are we justified in saying the hypothesis? yes, no, or maybe.\n\n"
         
-    def reference_labels(self):
+    def reference_gen_to_labels(self):
         if self is Task.NLI:
-            return ["yes", # entailment 
-                    "maybe", # neutral
-                    "no"] # contradiction
+            return {"yes": "entailment",
+                    "maybe": "neutral", 
+                    "no": "contradiction"}
         
     def format_input(self, input: Union[str, tuple[str]]):
         if self is Task.NLI:
@@ -109,7 +109,7 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
     random.seed(seed)
 
     task_dataset = task.reference_dataset_name()
-    task_labels = task.reference_labels()
+    task_gen_to_labels = task.reference_gen_to_labels()
     task_instruction = task.reference_instruction()
     
     if task == Task.NLI:
@@ -118,7 +118,7 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
         premises = examples_dataset['premise']
         hypotheses = examples_dataset['hypothesis']
         labels = examples_dataset['label']
-        answers = [task_labels[i] for i in labels]
+        answers = [list(task_gen_to_labels.keys())[i] for i in labels]
         example_pairs = list(zip(premises, hypotheses, answers))
         
         # build label-specific index pools
@@ -153,8 +153,8 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
 
 def match_gen_to_label(task: Task, gen: str) -> str:
     gen = gen.lower()
-    for label in task.reference_labels():
-        if re.search(rf"\b{label}\b", gen):
+    for key,label in task.reference_gen_to_labels().items():
+        if re.search(rf"\b{key}\b", gen):
             return label
     return None
 
@@ -200,13 +200,13 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
 
             if debug:
                 print(f"---- Sample {i}")
-                print(f'Clean prompt: {clean_prompt}\n Answer: {pred_clean}\n')
-                print(f'Dirty prompt: {dirty_prompt}\n Answer: {pred_dirty}\n')
+                print(f'Clean prompt: {clean_prompt}\n {pred_clean}\n')
+                print(f'Dirty prompt: {dirty_prompt}\n {pred_dirty}\n')
 
             if pred_clean == gold and pred_dirty != gold:
                 count += 1
                 selected_rows.append(row)
-                print(f"Extracted sample at {i}")
+                print(f"Extracted sample {i}")
 
         return pd.DataFrame(selected_rows).reset_index(drop=True)
 
