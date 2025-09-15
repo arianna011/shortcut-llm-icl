@@ -108,7 +108,7 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
     Returns:
         a function to add an ICL context to raw NLP inputs
     """
-    random.seed(seed)
+    rng = random.Random(seed)
 
     task_dataset = task.reference_dataset_name()
     task_gen_to_labels = task.reference_gen_to_labels()
@@ -132,7 +132,7 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
         sampled_indices = []
         if num_shot > 0:
             for lab in sorted(label_to_indices.keys()):
-                sampled_indices.extend(random.sample(label_to_indices[lab], num_shot)) 
+                sampled_indices.extend(rng.sample(label_to_indices[lab], num_shot)) 
 
         demonstration = task_instruction
         for idx in sampled_indices:
@@ -185,7 +185,7 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples:
 
     if task == Task.NLI:
 
-        with tqdm(total=n_samples, desc="Selecting prompts", ncols=100) as pbar:
+        with tqdm(total=n_samples, desc="Selecting prompts", ncols=100, dynamic_ncols=True) as pbar:
             for i, row in paired_dataset.sample(frac=1, random_state=seed).iterrows():
 
                 if count >= n_samples:
@@ -202,7 +202,7 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples:
                 pred_dirty = match_gen_to_label(task, gen_dirty)
 
                 if debug:
-                    tqdm.write(f"---- Sample {i}")
+                    tqdm.write(f"\n---- Sample {i}")
                     tqdm.write(f'Clean prompt: {clean_prompt}\n {pred_clean}\n')
                     tqdm.write(f'Dirty prompt: {dirty_prompt}\n {pred_dirty}\n')
 
@@ -212,6 +212,7 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples:
                     row_copy["dirty_label"] = pred_dirty
                     selected_rows.append(row_copy)
                     pbar.update(1)
+                    pbar.refresh()
                     if debug: tqdm.write(f"Extracted sample {i}")
             df = pd.DataFrame(selected_rows).reset_index(drop=True)
             if len(df) < n_samples:
