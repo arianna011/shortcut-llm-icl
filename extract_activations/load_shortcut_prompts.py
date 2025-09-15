@@ -160,7 +160,7 @@ def match_gen_to_label(task: Task, gen: str) -> str:
             return label
     return None
 
-def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int, model: BaseLLM, 
+def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples: int, model: BaseLLM, 
                             num_shot: int, max_tokens: int = 5, seed: int = 42, debug: bool = False) -> pd.DataFrame:
     """
     Given a dataset containing pairs (clean, dirty) of NLP prompts with and without an injected shortcut,
@@ -178,17 +178,17 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
         a dataset of the desired size containing the selected prompts
     """
 
-    assert paired_dataset.size >= size
+    assert len(paired_dataset) >= n_samples
     add_context = get_ICL_context_func(task, num_shot, seed=seed)
     selected_rows = []
     count = 0
 
     if task == Task.NLI:
 
-        with tqdm(total=size, desc="Selecting prompts", ncols=100) as pbar:
+        with tqdm(total=n_samples, desc="Selecting prompts", ncols=100) as pbar:
             for i, row in paired_dataset.sample(frac=1, random_state=seed).iterrows():
 
-                if count >= size:
+                if count >= n_samples:
                     break
 
                 clean_prompt = add_context(row["premise_clean"], row["hypothesis_clean"])
@@ -206,13 +206,17 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, size: int,
                     tqdm.write(f'Clean prompt: {clean_prompt}\n {pred_clean}\n')
                     tqdm.write(f'Dirty prompt: {dirty_prompt}\n {pred_dirty}\n')
 
-                if (pred_clean == gold) and (pred_dirty != gold) and (pred_dirty != None):
+                if (pred_clean == gold) and (pred_dirty != gold) and (pred_dirty is not None):
                     count += 1
-                    selected_rows.append(row)
+                    row_copy = row.copy()
+                    row_copy["dirty_label"] = pred_dirty
+                    selected_rows.append(row_copy)
                     pbar.update(1)
                     if debug: tqdm.write(f"Extracted sample {i}")
-
-        return pd.DataFrame(selected_rows).reset_index(drop=True)
+            df = pd.DataFrame(selected_rows).reset_index(drop=True)
+            if len(df) < n_samples:
+                tqdm.write(f"Only {len(df)} samples found (requested {n_samples}).")
+            return df
 
     else:
         raise NotImplementedError
