@@ -381,6 +381,8 @@ class HuggingFaceLLM(BaseLLM):
             model_kwargs["device_map"] = "auto"
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token)
+        self.tokenizer.pad_token_id = 0 if self.tokenizer.pad_token_id is None else self.tokenizer.pad_token_id
+        self.tokenizer.bos_token_id = 1
         self.model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
         
     

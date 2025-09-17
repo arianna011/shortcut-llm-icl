@@ -161,7 +161,8 @@ def match_gen_to_label(task: Task, gen: str) -> str:
     return None
 
 def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples: int, model: BaseLLM, 
-                            num_shot: int, max_tokens: int = 5, seed: int = 42, debug: bool = False) -> pd.DataFrame:
+                            num_shot: int, temperature: float = 0.0, max_tokens: int = 5, seed: int = 42, 
+                            debug: bool = False) -> pd.DataFrame:
     """
     Given a dataset containing pairs (clean, dirty) of NLP prompts with and without an injected shortcut,
     extract a desired number of prompt pairs where the input model succeed to peform the given task
@@ -196,9 +197,9 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples:
                 gold = row["gold_label"]
 
                 # get model predictions
-                gen_clean = model.complete(clean_prompt, max_tokens=max_tokens).strip()
+                gen_clean = model.complete(clean_prompt, max_tokens=max_tokens, temperature=temperature).strip()
                 pred_clean = match_gen_to_label(task, gen_clean)
-                gen_dirty = model.complete(dirty_prompt, max_tokens=max_tokens).strip()
+                gen_dirty = model.complete(dirty_prompt, max_tokens=max_tokens, temperature=temperature).strip()
                 pred_dirty = match_gen_to_label(task, gen_dirty)
 
                 if debug:
