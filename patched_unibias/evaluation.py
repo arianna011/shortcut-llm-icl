@@ -180,8 +180,8 @@ def intialize_resume_logic(resume, model, dataset_name, save_dir, repE):
     os.makedirs(resume_dir, exist_ok=True)
 
     start_index = 0
-    predictions = None
-    all_label_probs = None
+    predictions = []
+    all_label_probs = []
 
     if resume:
         # resume an interrupted evaluation
