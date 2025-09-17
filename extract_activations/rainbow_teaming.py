@@ -396,14 +396,23 @@ class HuggingFaceLLM(BaseLLM):
         prompt_length = len(self.tokenizer.decode(
                             input_ids[0],
                             skip_special_tokens=True))
-        output_dict = self.model.generate(input_ids=inputs["input_ids"], 
-                                          attention_mask=attention_mask,
-                                          do_sample = True,
-                                          temperature = temperature,
-                                          max_new_tokens=max_tokens, 
-                                          return_dict_in_generate=True, 
-                                          output_scores=False, 
-                                          pad_token_id=self.tokenizer.eos_token_id)
+        if temperature == 0.0: 
+            output_dict = self.model.generate(input_ids=inputs["input_ids"], 
+                                            attention_mask=attention_mask,
+                                            do_sample = False,
+                                            max_new_tokens=max_tokens, 
+                                            return_dict_in_generate=True, 
+                                            output_scores=False, 
+                                            pad_token_id=self.tokenizer.eos_token_id)
+        else:
+            output_dict = self.model.generate(input_ids=inputs["input_ids"], 
+                                            attention_mask=attention_mask,
+                                            do_sample = True,
+                                            temperature = temperature,
+                                            max_new_tokens=max_tokens, 
+                                            return_dict_in_generate=True, 
+                                            output_scores=False, 
+                                            pad_token_id=self.tokenizer.eos_token_id)
               
         outputs = output_dict['sequences'] # token IDs of the prompt + generated text
         outputs = self.tokenizer.batch_decode(outputs.detach().cpu().numpy(), skip_special_tokens=True)[0] #batch size=1
