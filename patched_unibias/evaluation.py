@@ -149,13 +149,13 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
             release_memory(model)
        
         # save partial results
-        store_partial_results(index, save_every, resume_dir, len(prompt_list), predictions, all_label_probs)
-        tqdm.write(f"Saved checkpoint at step {index + 1}")
-
-        # evaluate intermediate performance
-        cf = confusion_matrix(labels[:len(predictions)], predictions)
-        acc, _ = classification_accuracy(predictions, labels[:len(predictions)])
-        tqdm.write(f"Partial accuracy: {acc}")
+        if (index + 1) % save_every == 0 or index == len(prompt_list) - 1:
+            store_partial_results(index, resume_dir, predictions, all_label_probs)
+            tqdm.write(f"Saved checkpoint at step {index + 1}")
+            # evaluate intermediate performance
+            cf = confusion_matrix(labels[:len(predictions)], predictions)
+            acc, _ = classification_accuracy(predictions, labels[:len(predictions)])
+            tqdm.write(f"Partial accuracy: {acc}")
 
     acc, _ = classification_accuracy(predictions, labels[:len(predictions)])
     print('Final classification accuracy:', acc)
@@ -200,16 +200,15 @@ def intialize_resume_logic(resume, model, dataset_name, save_dir, repE):
 
     return resume_dir, start_index, predictions, all_label_probs
 
-def store_partial_results(index, save_every, resume_dir, prompt_list_len, predictions, all_label_probs):
+def store_partial_results(index, resume_dir, predictions, all_label_probs):
 
-    if (index + 1) % save_every == 0 or index == prompt_list_len - 1:
-            partial_file = os.path.join(resume_dir, f"results_{index + 1}.pkl")
-            with open(partial_file, "wb") as f:
-                pickle.dump({
-                    "predictions": predictions,
-                    "all_label_probs": all_label_probs,
-                    "indices": list(range(index + 1))
-                }, f)
+    partial_file = os.path.join(resume_dir, f"results_{index + 1}.pkl")
+    with open(partial_file, "wb") as f:
+        pickle.dump({
+            "predictions": predictions,
+            "all_label_probs": all_label_probs,
+            "indices": list(range(index + 1))
+        }, f)
 
 def store_fail_examples(fail_examples, failures_csv_path):
 
