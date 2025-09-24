@@ -94,10 +94,6 @@ def create_paired_dataset(standard_df: pd.DataFrame, shortcut_df: pd.DataFrame, 
                 elif identical:
                     paired_df = paired_df.drop(columns=[other]).rename(columns={col: base})
 
-    #to fix
-    if "gold_label" not in paired_df.columns:
-        paired_df.rename(columns={"gold_label_clean":"gold_label"})
-
     return paired_df
 
 def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[..., str]:
@@ -166,7 +162,7 @@ def match_gen_to_label(task: Task, gen: str) -> str:
 
 def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples: int, model: BaseLLM, 
                             num_shot: int, temperature: float = 0.0, max_tokens: int = 5, seed: int = 42, 
-                            debug: bool = False) -> pd.DataFrame:
+                            debug: bool = False, gold_label_col="gold_label") -> pd.DataFrame:
     """
     Given a dataset containing pairs (clean, dirty) of NLP prompts with and without an injected shortcut,
     extract a desired number of prompt pairs where the input model succeed to peform the given task
@@ -198,7 +194,7 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples:
 
                 clean_prompt = add_context(row["premise_clean"], row["hypothesis_clean"])
                 dirty_prompt = add_context(row["premise_dirty"], row["hypothesis_dirty"])
-                gold = row["gold_label"]
+                gold = row[gold_label_col]
 
                 # get model predictions
                 gen_clean = model.complete(clean_prompt, max_tokens=max_tokens, temperature=temperature).strip()
