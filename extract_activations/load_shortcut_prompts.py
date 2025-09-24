@@ -94,6 +94,10 @@ def create_paired_dataset(standard_df: pd.DataFrame, shortcut_df: pd.DataFrame, 
                 elif identical:
                     paired_df = paired_df.drop(columns=[other]).rename(columns={col: base})
 
+    #to fix
+    if "gold_label" not in paired_df.columns:
+        paired_df.rename(columns={"gold_label_clean":"gold_label"})
+
     return paired_df
 
 def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[..., str]:
