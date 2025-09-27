@@ -195,12 +195,11 @@ def match_gen_to_label(task: Task, model: BaseLLM, gen: str, ans_probs: list[tor
     ids = find_possible_ids_for_labels(ans, model.tokenizer)
     pred_idx, _ = predict_label(ans_probs, ids)
     pred = ans[pred_idx]
-    if debug:
-        tqdm.write(f'\nGeneration: "{gen}" -> Prediction: "{pred}"')
     return pred
 
 def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples: int, model: BaseLLM, 
-                            num_shot: int, condition: Callable[[str,str],bool], temperature: float = 0.0, max_tokens: int = 5, seed: int = 42, debug: bool = False) -> pd.DataFrame:
+                            num_shot: int, condition: Callable[[str,str],bool], temperature: float = 0.0, 
+                            max_tokens: int = 5, seed: int = 42, debug: bool = False, logits_step: int=0) -> pd.DataFrame:
     """
     Given a dataset containing pairs (clean, dirty) of NLP prompts with and without an injected shortcut,
     extract a desired number of prompt pairs where the input model succeed to peform the given task
@@ -234,20 +233,18 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples:
                 clean_prompt = add_context(row["premise_clean"], row["hypothesis_clean"])
                 dirty_prompt = add_context(row["premise_dirty"], row["hypothesis_dirty"])
 
-                if debug:
-                    tqdm.write(f"\n---- Sample {i}")
-
                 # get model predictions
                 gen_clean, answ_probs_clean = model.complete(clean_prompt, max_tokens=max_tokens, 
-                                                             temperature=temperature, return_ans_probs=True)
+                                                             temperature=temperature, return_ans_probs=True, logits_step=logits_step)
                 pred_clean = match_gen_to_label(task, model, gen_clean, answ_probs_clean, debug)
                 gen_dirty, answ_probs_dirty = model.complete(dirty_prompt, max_tokens=max_tokens, 
-                                                             temperature=temperature, return_ans_probs=True)
+                                                             temperature=temperature, return_ans_probs=True, logits_step=logits_step)
                 pred_dirty = match_gen_to_label(task, model, gen_dirty, answ_probs_dirty, debug)
 
                 if debug:
-                    tqdm.write(f'Clean prompt: {clean_prompt}\n {pred_clean}\n')
-                    tqdm.write(f'Dirty prompt: {dirty_prompt}\n {pred_dirty}\n')
+                    tqdm.write(f"\n---- Sample {i}")
+                    tqdm.write(f'Clean prompt: {clean_prompt}\n {pred_clean}\n (Generation: "{gen_clean}")\n')
+                    tqdm.write(f'Dirty prompt: {dirty_prompt}\n {pred_dirty}\n (Generation: "{gen_dirty}")\n')
                     tqdm.write(f"\n----------------")
 
                 if condition(pred_clean, pred_dirty):

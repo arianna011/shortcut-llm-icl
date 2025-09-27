@@ -388,7 +388,7 @@ class HuggingFaceLLM(BaseLLM):
         
     
     def complete(self, prompt: str, max_tokens: int = 512, temperature: float = 1.0, 
-                 return_ans_probs=False) -> tuple[str, list[torch.Tensor]]:
+                 return_ans_probs=False, logits_step=0) -> tuple[str, torch.Tensor]:
             
         self.model.eval()
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
@@ -400,7 +400,7 @@ class HuggingFaceLLM(BaseLLM):
                             input_ids[0],
                             skip_special_tokens=True))
         if temperature == 0.0: 
-            output_dict = self.model.generate(input_ids=inputs["input_ids"], 
+            output_dict = self.model.generate(input_ids=input_ids, 
                                             attention_mask=attention_mask,
                                             do_sample = False,
                                             max_new_tokens=max_tokens, 
@@ -408,7 +408,7 @@ class HuggingFaceLLM(BaseLLM):
                                             output_scores=return_ans_probs, 
                                             pad_token_id=self.tokenizer.eos_token_id)
         else:
-            output_dict = self.model.generate(input_ids=inputs["input_ids"], 
+            output_dict = self.model.generate(input_ids=input_ids, 
                                             attention_mask=attention_mask,
                                             do_sample = True,
                                             temperature = temperature,
@@ -423,7 +423,7 @@ class HuggingFaceLLM(BaseLLM):
         
         if return_ans_probs:
             scores = output_dict['scores']
-            answer_logits = scores[0][0]
+            answer_logits = scores[logits_step][0]
             answer_probs = F.softmax(answer_logits, dim=-1)
         
         gc.collect()
