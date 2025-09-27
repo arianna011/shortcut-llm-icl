@@ -247,7 +247,7 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples:
                     tqdm.write(f'Dirty prompt: {dirty_prompt}\n {pred_dirty}\n (Generation: "{gen_dirty}")\n')
                     tqdm.write(f"\n----------------")
 
-                if condition(row, pred_clean, pred_dirty):
+                if condition(task, row, pred_clean, pred_dirty):
                     count += 1
                     row_copy = row.copy()
                     row_copy["dirty_label"] = pred_dirty
