@@ -150,30 +150,30 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
             
     else:
         raise NotImplementedError
+
+#from Unibias
+def find_possible_ids_for_labels(arg_str_list: list[str], tokenizer):
+
+    vocab_size = tokenizer.vocab_size if hasattr(tokenizer, "vocab_size") else 32000
+
+    # hold the IDs of tokens corresponding to each arg_str
+    args_lower = [arg.lower() for arg in arg_str_list]
+    ids_dict = {arg_str: [] for arg_str in args_lower}
     
-
-def find_possible_ids_for_labels(arg_str_list, tokenizer):
-    # Initialize a dictionary to hold the IDs for each arg_str
-    ids_dict = {arg_str[0]: [] for arg_str in arg_str_list}
-
     # Iterate over the range of IDs only once
-    for id in range(32000):
+    for id in range(vocab_size):
         decoded = tokenizer.decode(id)
-
         # Check each arg_str for a match
         if decoded:
-            for arg_str_tuple in arg_str_list:
-                for arg_str in arg_str_tuple:
-                    decoded = decoded.lower()
-                    arg_str = arg_str.lower()
-                    if len(arg_str) > 1:
-                        if decoded in arg_str and arg_str[0] == decoded[0] and len(decoded)>1:
-                            ids_dict[arg_str_tuple[0]].append(id)
-                    else:
-                        if decoded in arg_str and arg_str[0] == decoded[0]:
-                            ids_dict[arg_str_tuple[0]].append(id)
+            decoded = decoded.lower()
+            for arg in args_lower:
+                if len(arg) > 1:
+                    if decoded in arg and arg[0] == decoded[0] and len(decoded)>1:
+                        ids_dict[arg].append(id)
+                else:
+                    if decoded in arg and arg[0] == decoded[0]:
+                        ids_dict[arg].append(id)
 
-    # Convert the dictionary to a list of lists for the IDs of each arg_str
     ids_list = list(ids_dict.values())
     max_len = max(len(sublist) for sublist in ids_list)
     padded_lst = [sublist + [sublist[0]] * (max_len - len(sublist)) for sublist in ids_list]
@@ -193,13 +193,14 @@ def match_gen_to_label(task: Task, model: BaseLLM, gen: str, ans_probs: list[tor
     
     ans = list(task.reference_gen_to_labels().keys())
     ids = find_possible_ids_for_labels(ans, model.tokenizer)
-    pred, _ = predict_label(ans_probs, ids)
+    pred_idx, _ = predict_label(ans_probs, ids)
+    pred = ans[pred_idx]
     if debug:
-        tqdm.write(f'Generation: "{gen}"\nPrediction: "{pred}"')
+        tqdm.write(f'\nGeneration: "{gen}" -> Prediction: "{pred}"')
     return pred
 
 def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples: int, model: BaseLLM, 
-                            num_shot: int, condition: Callable[[str,str],bool], temperature: float = 0.0, max_tokens: int = 5, seed: int = 42, debug: bool = False, gold_label_col="gold_label") -> pd.DataFrame:
+                            num_shot: int, condition: Callable[[str,str],bool], temperature: float = 0.0, max_tokens: int = 5, seed: int = 42, debug: bool = False) -> pd.DataFrame:
     """
     Given a dataset containing pairs (clean, dirty) of NLP prompts with and without an injected shortcut,
     extract a desired number of prompt pairs where the input model succeed to peform the given task
@@ -232,7 +233,9 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples:
 
                 clean_prompt = add_context(row["premise_clean"], row["hypothesis_clean"])
                 dirty_prompt = add_context(row["premise_dirty"], row["hypothesis_dirty"])
-                gold = row[gold_label_col]
+
+                if debug:
+                    tqdm.write(f"\n---- Sample {i}")
 
                 # get model predictions
                 gen_clean, answ_probs_clean = model.complete(clean_prompt, max_tokens=max_tokens, 
@@ -243,9 +246,9 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples:
                 pred_dirty = match_gen_to_label(task, model, gen_dirty, answ_probs_dirty, debug)
 
                 if debug:
-                    tqdm.write(f"\n---- Sample {i}")
                     tqdm.write(f'Clean prompt: {clean_prompt}\n {pred_clean}\n')
                     tqdm.write(f'Dirty prompt: {dirty_prompt}\n {pred_dirty}\n')
+                    tqdm.write(f"\n----------------")
 
                 if condition(pred_clean, pred_dirty):
                     count += 1
