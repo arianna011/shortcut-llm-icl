@@ -44,6 +44,7 @@ import fnmatch
 import torch
 import gc
 from accelerate.utils import release_memory
+import torch.nn.functional as F
 
 
 # Feature Descriptors ================================================================================================
@@ -386,12 +387,14 @@ class HuggingFaceLLM(BaseLLM):
         self.model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
         
     
-    def complete(self, prompt: str, max_tokens: int = 512, temperature: float = 1.0) -> str:
+    def complete(self, prompt: str, max_tokens: int = 512, temperature: float = 1.0, 
+                 return_ans_probs=False) -> tuple[str, list[torch.Tensor]]:
             
         self.model.eval()
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
         input_ids = inputs["input_ids"]
         attention_mask = inputs["attention_mask"]
+        answer_probs = None
 
         prompt_length = len(self.tokenizer.decode(
                             input_ids[0],
@@ -402,7 +405,7 @@ class HuggingFaceLLM(BaseLLM):
                                             do_sample = False,
                                             max_new_tokens=max_tokens, 
                                             return_dict_in_generate=True, 
-                                            output_scores=False, 
+                                            output_scores=return_ans_probs, 
                                             pad_token_id=self.tokenizer.eos_token_id)
         else:
             output_dict = self.model.generate(input_ids=inputs["input_ids"], 
@@ -411,17 +414,23 @@ class HuggingFaceLLM(BaseLLM):
                                             temperature = temperature,
                                             max_new_tokens=max_tokens, 
                                             return_dict_in_generate=True, 
-                                            output_scores=False, 
+                                            output_scores=return_ans_probs, 
                                             pad_token_id=self.tokenizer.eos_token_id)
               
         outputs = output_dict['sequences'] # token IDs of the prompt + generated text
         outputs = self.tokenizer.batch_decode(outputs.detach().cpu().numpy(), skip_special_tokens=True)[0] #batch size=1
         outputs_only = outputs[prompt_length:]
+        
+        if return_ans_probs:
+            scores = output_dict['scores']
+            answer_logits = scores[0][0]
+            answer_probs = F.softmax(answer_logits, dim=-1)
+        
         gc.collect()
         torch.cuda.empty_cache()
         release_memory(self.model)
 
-        return outputs_only
+        return outputs_only, answer_probs
 
 
 @dataclass

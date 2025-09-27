@@ -152,17 +152,54 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
         raise NotImplementedError
     
 
+def find_possible_ids_for_labels(arg_str_list, tokenizer):
+    # Initialize a dictionary to hold the IDs for each arg_str
+    ids_dict = {arg_str[0]: [] for arg_str in arg_str_list}
 
-def match_gen_to_label(task: Task, gen: str) -> str:
-    gen = gen.lower()
-    for key,label in task.reference_gen_to_labels().items():
-        if re.search(rf"\b{key}\b", gen):
-            return label
-    return None
+    # Iterate over the range of IDs only once
+    for id in range(32000):
+        decoded = tokenizer.decode(id)
+
+        # Check each arg_str for a match
+        if decoded:
+            for arg_str_tuple in arg_str_list:
+                for arg_str in arg_str_tuple:
+                    decoded = decoded.lower()
+                    arg_str = arg_str.lower()
+                    if len(arg_str) > 1:
+                        if decoded in arg_str and arg_str[0] == decoded[0] and len(decoded)>1:
+                            ids_dict[arg_str_tuple[0]].append(id)
+                    else:
+                        if decoded in arg_str and arg_str[0] == decoded[0]:
+                            ids_dict[arg_str_tuple[0]].append(id)
+
+    # Convert the dictionary to a list of lists for the IDs of each arg_str
+    ids_list = list(ids_dict.values())
+    max_len = max(len(sublist) for sublist in ids_list)
+    padded_lst = [sublist + [sublist[0]] * (max_len - len(sublist)) for sublist in ids_list]
+    return padded_lst
+
+def predict_label(answer_logit, gt_ans_ids_list):
+    prediction_logit_list = []
+    # for each label, take the maximum logit among all compatible tokens
+    for i_id_list in gt_ans_ids_list:
+        logit_i = torch.max(answer_logit[torch.tensor(i_id_list)]).item()
+        prediction_logit_list.append(logit_i)
+    # take the label with highest score
+    prediction = torch.max(torch.tensor(prediction_logit_list), dim=0)[1]
+    return prediction, prediction_logit_list
+
+def match_gen_to_label(task: Task, model: BaseLLM, gen: str, ans_probs: list[torch.Tensor], debug: bool = False) -> str:
+    
+    ans = list(task.reference_gen_to_labels().keys())
+    ids = find_possible_ids_for_labels(ans, model.tokenizer)
+    pred, _ = predict_label(ans_probs, ids)
+    if debug:
+        tqdm.write(f'Generation: "{gen}"\nPrediction: "{pred}"')
+    return pred
 
 def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples: int, model: BaseLLM, 
-                            num_shot: int, temperature: float = 0.0, max_tokens: int = 5, seed: int = 42, 
-                            debug: bool = False, gold_label_col="gold_label") -> pd.DataFrame:
+                            num_shot: int, condition: Callable[[str,str],bool], temperature: float = 0.0, max_tokens: int = 5, seed: int = 42, debug: bool = False, gold_label_col="gold_label") -> pd.DataFrame:
     """
     Given a dataset containing pairs (clean, dirty) of NLP prompts with and without an injected shortcut,
     extract a desired number of prompt pairs where the input model succeed to peform the given task
@@ -174,6 +211,7 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples:
         - size (the desired number of prompts to randomly select from the suitable ones)
         - model (the LLM to be tested on shortcuts)
         - num shot (parameter for ICL setting)
+        - condition (determines whether to select or reject a pair of prompts)
     
     Returns:
         a dataset of the desired size containing the selected prompts
@@ -197,17 +235,19 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples:
                 gold = row[gold_label_col]
 
                 # get model predictions
-                gen_clean = model.complete(clean_prompt, max_tokens=max_tokens, temperature=temperature).strip()
-                pred_clean = match_gen_to_label(task, gen_clean)
-                gen_dirty = model.complete(dirty_prompt, max_tokens=max_tokens, temperature=temperature).strip()
-                pred_dirty = match_gen_to_label(task, gen_dirty)
+                gen_clean, answ_probs_clean = model.complete(clean_prompt, max_tokens=max_tokens, 
+                                                             temperature=temperature, return_ans_probs=True)
+                pred_clean = match_gen_to_label(task, model, gen_clean, answ_probs_clean, debug)
+                gen_dirty, answ_probs_dirty = model.complete(dirty_prompt, max_tokens=max_tokens, 
+                                                             temperature=temperature, return_ans_probs=True)
+                pred_dirty = match_gen_to_label(task, model, gen_dirty, answ_probs_dirty, debug)
 
                 if debug:
                     tqdm.write(f"\n---- Sample {i}")
                     tqdm.write(f'Clean prompt: {clean_prompt}\n {pred_clean}\n')
                     tqdm.write(f'Dirty prompt: {dirty_prompt}\n {pred_dirty}\n')
 
-                if (pred_clean == gold) and (pred_dirty != gold) and (pred_dirty is not None):
+                if condition(pred_clean, pred_dirty):
                     count += 1
                     row_copy = row.copy()
                     row_copy["dirty_label"] = pred_dirty
