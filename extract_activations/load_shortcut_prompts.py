@@ -191,11 +191,12 @@ def predict_label(answer_logit, gt_ans_ids_list):
 
 def match_gen_to_label(task: Task, model: BaseLLM, gen: str, ans_probs: list[torch.Tensor], debug: bool = False) -> str:
     
-    ans = list(task.reference_gen_to_labels().keys())
+    ans_dict = task.reference_gen_to_labels()
+    ans = list(ans_dict.keys())
     ids = find_possible_ids_for_labels(ans, model.tokenizer)
     pred_idx, _ = predict_label(ans_probs, ids)
     pred = ans[pred_idx]
-    return pred
+    return ans_dict[pred]
 
 def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples: int, model: BaseLLM, 
                             num_shot: int, condition: Callable[[str,str],bool], temperature: float = 0.0, 
