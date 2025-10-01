@@ -14,3 +14,5 @@
 "\n\nclassification_accuracy: 0.776173285198556[[114  32]\n [ 30 101]]"
 "num shot: 1 new tokens: 10 repE: True activations /content/drive/MyDrive/Tesi Computer Science/ShortcutProject/inverted_correct_negation_512_no_sel.pt layers: [-5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17]"
 "\n\nclassification_accuracy: 0.8014440433212996[[117  29]\n [ 26 105]]"
+"num shot: 1 new tokens: 10 repE: True activations /content/drive/MyDrive/Tesi Computer Science/ShortcutProject/instructions_inverted_correct_negation_512_no_sel.pt layers: [-5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17]"
+"\n\nclassification_accuracy: 0.7906137184115524[[109  37]\n [ 21 110]]"
