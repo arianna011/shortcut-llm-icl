@@ -4,3 +4,5 @@
 "\n\nclassification_accuracy: 0.7653429602888087[[128  18]\n [ 47  84]]"
 "num shot: 1 new tokens: 10 repE: True layers: [-5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17]"
 "\n\nclassification_accuracy: 0.6425992779783394[[145   1]\n [ 98  33]]"
+"num shot: 1 new tokens: 10 repE: True activations /content/drive/MyDrive/Tesi Computer Science/ShortcutProject/negation_64_seed_20.pt layers: [-5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17]"
+"\n\nclassification_accuracy: 0.7256317689530686[[ 91  55]\n [ 21 110]]"
