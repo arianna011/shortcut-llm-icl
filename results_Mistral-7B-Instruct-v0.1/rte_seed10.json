@@ -22,3 +22,5 @@
 "\n\nclassification_accuracy: 0.7725631768953068[[113  33]\n [ 30 101]]"
 "num shot: 1 new tokens: 10 repE: True activations /content/drive/MyDrive/Tesi Computer Science/ShortcutProject/inverted_correct_negation_20_seed_20.pt layers: [-5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17]"
 "\n\nclassification_accuracy: 0.776173285198556[[104  42]\n [ 20 111]]"
+"num shot: 1 new tokens: 10 repE: True activations /content/drive/MyDrive/Tesi Computer Science/ShortcutProject/activations/no_shuffle_inverted_negation_512_no_sel.pt layers: [-5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17]"
+"\n\nclassification_accuracy: 0.776173285198556[[108  38]\n [ 24 107]]"
