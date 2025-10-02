@@ -28,3 +28,5 @@
 "\n\nclassification_accuracy: 0.7328519855595668[[ 85  61]\n [ 13 118]]"
 "num shot: 1 new tokens: 10 repE: True activations /content/drive/MyDrive/Tesi Computer Science/ShortcutProject/activations/shuffle_inverted_negation_346.pt layers: [-5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17]"
 "\n\nclassification_accuracy: 0.5126353790613718[[ 11 135]\n [  0 131]]"
+"num shot: 1 new tokens: 10 repE: True activations /content/drive/MyDrive/Tesi Computer Science/ShortcutProject/activations/shuffle_negation_346.pt layers: [-5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17]"
+"\n\nclassification_accuracy: 0.5487364620938628[[146   0]\n [125   6]]"
