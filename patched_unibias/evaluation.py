@@ -211,6 +211,7 @@ def store_partial_results(index, resume_dir, predictions, all_label_probs):
 
 def store_fail_examples(fail_examples, failures_csv_path):
 
+    os.makedirs(os.path.dirname(failures_csv_path), exist_ok=True)
     with open(failures_csv_path, mode="w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fail_examples[0].keys(), quoting=csv.QUOTE_ALL)
             writer.writeheader()
