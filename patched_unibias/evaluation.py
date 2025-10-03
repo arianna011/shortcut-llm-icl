@@ -103,8 +103,7 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
               output_dict = rep_control_pipeline(prompt, 
                                                 activations=activations,  
                                                 max_new_tokens=gen_tokens, 
-                                                do_sample=False, 
-                                                repetition_penalty=1.1)
+                                                do_sample=False)
             else:
               output_dict = model.generate(input_ids=inputs["input_ids"], 
                                             attention_mask=attention_mask,
@@ -113,8 +112,8 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
                                             output_scores=True, 
                                             pad_token_id=tokenizer.eos_token_id)
               
-            outputs = output_dict['sequences'] # token IDs of the prompt + generated text
-            scores = output_dict['scores'] # list of tensors (each shape [1, vocab_size]) with logits for each generated token step
+            outputs = output_dict['sequences'] # token IDs of prompt + generated text (shape [batch_size, input_len + max_new_tokens])
+            scores = output_dict['scores'] # list of tensors (each shape [batch_size, vocab_size]) with logits for each generated token step
 
             outputs = tokenizer.batch_decode(outputs.detach().cpu().numpy(), skip_special_tokens=True)[0] # (batch size = 1)
             outputs_only = outputs[prompt_length:]
