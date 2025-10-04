@@ -5,7 +5,7 @@ import pickle
 from sklearn.metrics import confusion_matrix
 from sklearn.mixture import GaussianMixture
 from scipy.optimize import linear_sum_assignment
-from utils import *
+from .utils import *
 from transformers import pipeline
 import sys
 import os
@@ -14,9 +14,9 @@ import gc
 from accelerate.utils import release_memory
 from tqdm import tqdm
 import csv, json
-from representation_engineering import repe_pipeline_registry
+from ..representation_engineering import repe_pipeline_registry
 import wandb
-from logging import WB_USER, WB_TEAM, WB_PROJECT_NAME
+from .logging import WB_USER, WB_TEAM, WB_PROJECT_NAME
 
 def ICL_evaluation(model: transformers.PreTrainedModel, 
                    tokenizer: transformers.AutoTokenizer,
