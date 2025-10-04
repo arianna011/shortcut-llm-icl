@@ -15,6 +15,8 @@ from accelerate.utils import release_memory
 from tqdm import tqdm
 import csv, json
 from representation_engineering import repe_pipeline_registry
+import wandb
+from logging import WB_USER, WB_TEAM, WB_PROJECT_NAME
 
 def ICL_evaluation(model: transformers.PreTrainedModel, 
                    tokenizer: transformers.AutoTokenizer,
@@ -25,8 +27,7 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
                    dataset_name: str, 
                    gen_tokens: int = 10,
                    repE: bool = False, 
-                   layers: List[int] = [],
-                   activations_path: str = "",
+                   activations_art_name: str = "",
                    save_every: int = 100, 
                    save_dir: str = "results_tmp", 
                    resume: bool = False,
@@ -44,8 +45,7 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
         dataset_name: name of the dataset
         gen_tokens: maximum number of new tokens to generate
         repE: whether to use Representantion Engineering
-        layers: list of hidden layer numbers in which representation control must be injected
-        activations: path to the file containing the activations for representantion control
+        activations: name of the WB artifact containing RepReading directions
         save_every: number of samples to process before storing intermediate results
         save_dir: where to store intermediate results
         resume: whether to restart an interrupted evaluation from the last stored intermediate results
@@ -67,6 +67,16 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
     if repE:  
       print("Using Representation Engineering")
       repe_pipeline_registry()
+      
+      # load pre-saved direction vectors
+      api = wandb.Api()
+      artifact = api.artifact(f"{WB_TEAM}/{WB_PROJECT_NAME}/{activations_art_name}:latest")
+      artifact_dir = artifact.download()
+      artifact_files = [f.name for f in artifact.files()]
+      pt_file = next(f for f in artifact_files if f.endswith(".pt"))
+      activations = torch.load(f"{artifact_dir}/{pt_file}")
+      layers = artifact.metadata["hidden_layers"]
+      assert isinstance(activations, torch.Tensor), f"Expected activations tensor, got {type(activations)}"
 
       # initialize a control pipeline
       control_method="reading_vec" # add a scaled version of a direction vector to internal activations during forward pass
@@ -76,9 +86,6 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
           tokenizer=tokenizer,
           layers=layers, # layers to inject control in
           control_method=control_method)
-      
-      # load pre-saved direction vectors
-      activations = torch.load(activations_path)
 
     # resume interrupted evaluation if requested
     resume_dir, start_index, predictions, all_label_probs = intialize_resume_logic(resume, model, dataset_name, save_dir, repE)

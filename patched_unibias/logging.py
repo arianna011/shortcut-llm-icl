@@ -22,6 +22,35 @@ class SelectionMethod(Enum):
 
 # ARTIFACTS ===================================================================================================================
 
+def get_dataset_artifact_name(
+    dataset_name: str,
+    size: int,
+    shortcut: str,
+    selection_method: SelectionMethod,
+    random_seed: int):
+    return f'{dataset_name}_{size}_{shortcut}_{selection_method.description}_seed_{random_seed}'
+
+def get_activations_artifact_name(
+    dataset_artifact_name: str,
+    coeff: float,
+    hidden_layers: list[int],
+    direction_method: str,
+    clean_instruction: str,
+    dirty_instruction: str, 
+    shuffled_data: bool = True):
+
+    shuffle_str = ""
+    instr_str = ""
+    if not shuffled_data:
+        shuffle_str = "_no_shuffle"
+    if clean_instruction != dirty_instruction:
+        instr_str = "_custom_instr"
+    hidden_layers_str = "_".join(map(str, hidden_layers))
+
+    return f'coeff_{coeff}{shuffle_str}{instr_str}_layers_{hidden_layers_str}_{direction_method}_{dataset_artifact_name}'
+    
+
+
 def log_dataset_artifact(
     dataset: Union[str,pd.DataFrame],
     dataset_name: str,
@@ -38,7 +67,7 @@ def log_dataset_artifact(
     """
     Logs a small dataset (file or Pandas datafreame) as a W&B artifact.
     """
-    artifact_name = f'{dataset_name}_{size}_{shortcut}_{selection_method.description}_seed_{random_seed}'
+    artifact_name = get_dataset_artifact_name(dataset_name, size, shortcut, selection_method, random_seed)
 
     wandb.init(project=WB_PROJECT_NAME, name=f"log_{artifact_name}")
 
@@ -92,15 +121,10 @@ def log_activation_artifact(
     Logs an activation (.pt) file as a W&B artifact and links it
     to the dataset artifact it was derived from.
     """
-    shuffle_str = ""
-    instr_str = ""
-    if not shuffled_data:
-        shuffle_str = "_no_shuffle"
-    if clean_instruction != dirty_instruction:
-        instr_str = "_custom_instr"
-    hidden_layers_str = "_".join(map(str, hidden_layers))
 
-    artifact_name = f'coeff_{coeff}{shuffle_str}{instr_str}_layers_{hidden_layers_str}_{direction_method}_{dataset_artifact_name}'
+    artifact_name = get_activations_artifact_name(
+        dataset_artifact_name, coeff, hidden_layers, direction_method, clean_instruction, dirty_instruction, shuffled_data
+    )
 
     wandb.init(project=WB_PROJECT_NAME, name=f"log_{artifact_name}")
     dataset_artifact = wandb.use_artifact(f"{dataset_artifact_name}:latest")

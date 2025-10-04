@@ -41,8 +41,7 @@ parser.add_argument('--Calibration', type=str, choices=["true", "false"], defaul
 
 #Added support for Representation Engineering modifications to LLM activations
 parser.add_argument('--RepE', type=str, choices=["true", "false"], default="false", help="Enable Representation Engineering")
-parser.add_argument('--activations', type=str, default=None, help="Path to the file containing RepE activations")
-parser.add_argument('--layers', type=int, nargs='+', default=[], help="Layers to inject representantion control into") 
+parser.add_argument('--activations', type=str, default=None, help="Name of the WB artifact containing RepE activations")
 parser.add_argument('--tokens', type=int, default=10, help="Max new tokens to generate") 
 parser.add_argument('--resume', type=str, choices=["true", "false"], default="false", help="Enable resume of previous interrupted evaluation")
 
@@ -66,7 +65,6 @@ Unibias = args.UniBias.lower() == "true"
 Calibration = args.Calibration.lower() == "true"
 RepE = args.RepE.lower() == "true"
 activations = args.activations
-rep_layers = args.layers
 new_tokens = args.tokens
 eval_resume = args.resume.lower() == "true"
 log_WB = args.log_on_WB.lower() == "true"
@@ -141,16 +139,14 @@ def main():
     s = ""
     if RepE:
         s += f" activations {activations}"
-        s += f" layers: {rep_layers}"
     write_json(record_file_path, 
                "num shot: " + str(num_shot) + " new tokens: " + str(new_tokens) + " repE: " + str(RepE) + s)
 
     # evaluate performance
     final_acc, predictions, all_label_probs, cf = ICL_evaluation(model, tokenizer, device, prompt_list, test_labels, 
                                                     gt_ans_ids_list, dataset_name, 
-                                                    repE=RepE, activations_path=activations,
-                                                    gen_tokens=new_tokens,layers=rep_layers, 
-                                                    resume=eval_resume, failures_csv_path=fail_csv_path)
+                                                    repE=RepE, activations_art_name=activations,
+                                                    gen_tokens=new_tokens,                                                    resume=eval_resume, failures_csv_path=fail_csv_path)
 
     write_json(record_file_path, final_acc + str(cf))
     if log_WB:
@@ -161,7 +157,8 @@ def main():
                            predictions,
                            test_labels,
                            all_label_probs,
-                           class_labels
+                           class_labels,
+                           activations
                            )
 
 if __name__ == "__main__":
