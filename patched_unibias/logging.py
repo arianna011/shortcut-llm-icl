@@ -12,13 +12,9 @@ WB_TEAM = "paolini-1943164-sapienza-universit-di-roma"
 WB_USER = "paolini-1943164"
 
 class SelectionMethod(Enum):
-   RANDOM="random",
-   MODEL_FAILS="failures",
+   RANDOM="random"
+   MODEL_FAILS="failures"
    MODEL_FAILS_ON_SPECIFIC_LABELS="shortcut_failures"
-
-   @property
-   def description(self):
-        return self.value
 
 # ARTIFACTS ===================================================================================================================
 
@@ -28,7 +24,7 @@ def get_dataset_artifact_name(
     shortcut: str,
     selection_method: SelectionMethod,
     random_seed: int):
-    return f'{dataset_name}_{size}_{shortcut}_{selection_method.description}_seed_{random_seed}'
+    return f'{dataset_name}_{size}_{shortcut}_{selection_method.value}_seed_{random_seed}'
 
 def get_activations_artifact_name(
     dataset_artifact_name: str,
@@ -67,8 +63,8 @@ def log_dataset_artifact(
     """
     Logs a small dataset (file or Pandas datafreame) as a W&B artifact.
     """
-    artifact_name = get_dataset_artifact_name(dataset_name, size, shortcut, selection_method, random_seed)
 
+    artifact_name = get_dataset_artifact_name(dataset_name, size, shortcut, selection_method, random_seed)
     wandb.init(project=WB_PROJECT_NAME, name=f"log_{artifact_name}")
 
     # save dataset locally if given as dataframe
