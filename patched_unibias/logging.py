@@ -4,15 +4,25 @@ import wandb
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, Union, Optional
+from enum import Enum
+import matplotlib.pyplot as plt
 
 WB_PROJECT_NAME = "shortcut-repe"
 WB_TEAM = "paolini-1943164-sapienza-universit-di-roma"
 WB_USER = "paolini-1943164"
 
+class SelectionMethod(Enum):
+   RANDOM="random",
+   MODEL_FAILS="failures",
+   MODEL_FAILS_ON_SPECIFIC_LABELS="shortcut_failures"
+
+   @property
+   def description(self):
+        return self.value
+
 # ARTIFACTS ===================================================================================================================
 
 def log_dataset_artifact(
-    artifact_name: str,
     dataset: Union[str,pd.DataFrame],
     dataset_name: str,
     task: str,
@@ -20,7 +30,7 @@ def log_dataset_artifact(
     columns: list[str],
     labels: list[str],
     shortcut: str,
-    selection_method: str,
+    selection_method: SelectionMethod,
     random_seed: int,
     metadata: Optional[Dict[str, Any]] = None,
     description: Optional[str] = None
@@ -28,6 +38,8 @@ def log_dataset_artifact(
     """
     Logs a small dataset (file or Pandas datafreame) as a W&B artifact.
     """
+    artifact_name = f'{dataset_name}_{size}_{shortcut}_{selection_method.description}_seed_{random_seed}'
+
     wandb.init(project=WB_PROJECT_NAME, name=f"log_{artifact_name}")
 
     # save dataset locally if given as dataframe
@@ -64,7 +76,6 @@ def log_dataset_artifact(
 
 
 def log_activation_artifact(
-    artifact_name: str,
     activations_path: str,
     dataset_artifact_name: str,
     coeff: float,
@@ -81,6 +92,16 @@ def log_activation_artifact(
     Logs an activation (.pt) file as a W&B artifact and links it
     to the dataset artifact it was derived from.
     """
+    shuffle_str = ""
+    instr_str = ""
+    if not shuffled_data:
+        shuffle_str = "_no_shuffle"
+    if clean_instruction != dirty_instruction:
+        instr_str = "_custom_instr"
+    hidden_layers_str = "_".join(map(str, hidden_layers))
+
+    artifact_name = f'coeff_{coeff}{shuffle_str}{instr_str}_layers_{hidden_layers_str}_{direction_method}_{dataset_artifact_name}'
+
     wandb.init(project=WB_PROJECT_NAME, name=f"log_{artifact_name}")
     dataset_artifact = wandb.use_artifact(f"{dataset_artifact_name}:latest")
     dataset_metadata = dataset_artifact.metadata
@@ -115,12 +136,16 @@ def log_activation_artifact(
 # LOGGING EVALUATION RUN ==============================================================================================================
 
 def log_evaluation_run(
-    name: str,
-    activations_artifact_name: str,
-    results: Dict[str, Any],
-    table_data: Optional[list] = None,
-    class_names: Optional[list] = None,
-    tags: Optional[list] = None,
+    eval_dataset: str,
+    ICL_shots: int,
+    repE_active: bool,
+    accuracy: float,
+    predictions: list[int],
+    gt_labels: list[int],
+    all_label_probs: list[list[float]],
+    class_names: list[str],
+    activations_artifact_name: Optional[str] = None,
+    tags: Optional[list] = None
 ):
     """
     Creates a W&B run for evaluation results using an activation artifact as input.
@@ -134,31 +159,41 @@ def log_evaluation_run(
         class_names: Optional class labels for confusion matrix.
         tags: Optional list of run tags.
     """
-    run = wandb.init(project=WB_PROJECT_NAME, name=name, tags=tags or [])
+    run_name = f"{eval_dataset}_{ICL_shots}_shots"
+    if repE_active:
+        assert activations_artifact_name, "RepE is active, please provide the activations artifact name"
+        run_name += f'_activations_{activations_artifact_name}'
+    else:
+        run_name += f'_baseline'
 
-    # Link activation artifact as input
-    activation_artifact = run.use_artifact(f"{activations_artifact_name}:latest")
-    activation_dir = activation_artifact.download()
+    run = wandb.init(project=WB_PROJECT_NAME, name=run_name, tags=tags or [])
 
-    # Log metrics
+    if repE_active:
+        # link activations artifact as input
+        activation_artifact = run.use_artifact(f"{activations_artifact_name}:latest")
+
+    results = {
+        "accuracy": accuracy,
+    }
+    # log metrics
     wandb.log(results)
 
-    # Optionally log detailed results table
-    if table_data:
-        table = wandb.Table(columns=["id", "true", "pred"])
-        for row in table_data:
-            table.add_data(*row)
-        wandb.log({"results_table": table})
+    table_columns = ["id", "true", "pred"] + class_names
+    table = wandb.Table(columns=table_columns)
 
-        # Optionally log confusion matrix
-        if class_names:
-            y_true = [r[1] for r in table_data]
-            y_pred = [r[2] for r in table_data]
-            wandb.log({
-                "confusion_matrix": wandb.plot.confusion_matrix(
-                    y_true=y_true, preds=y_pred, class_names=class_names
-                )
-            })
+    for idx, (true_idx, pred_idx, probs) in enumerate(zip(gt_labels, predictions, all_label_probs)):
+        row = [idx, class_names[true_idx], class_names[pred_idx]] + probs
+        table.add_data(*row)
+
+    wandb.log({"predictions_table": table})
+
+    y_true = [class_names[t] for t in gt_labels]
+    y_pred = [class_names[p] for p in predictions]
+    wandb.log({
+        "confusion_matrix": wandb.plot.confusion_matrix(
+            y_true=y_true, preds=y_pred, class_names=class_names
+        )
+    })
 
     wandb.finish()
-    print(f"✅ Logged evaluation run: {name} (input: {activations_artifact_name})")
+    print(f"✅ Logged evaluation run: {run_name}")

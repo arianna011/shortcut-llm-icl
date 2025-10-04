@@ -13,6 +13,7 @@ from extract_activations import BaseLLM, EchoLLM
 import re
 from tqdm import tqdm
 
+
 class Task(Enum):
     NLI = 0
 
@@ -35,6 +36,8 @@ class Task(Enum):
             assert isinstance(input, tuple)
             prem, hyp = input
             return f'Premise: {prem}\nHypothesis: {hyp}\nAnswer (choose only one: yes / no / maybe): '
+
+DATASETS_TO_TASKS = {"rte": Task.NLI}       
     
 
 def load_nli_shortcuts_from_tsv(paths: Union[str, List[str]]) -> pd.DataFrame:

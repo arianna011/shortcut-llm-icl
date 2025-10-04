@@ -53,6 +53,7 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
 
     Returns:
         (float) final classification accuracy
+        (list[int]) model predictions for each prompt
         (list[list[float]]) all label probabilities for each prompt
         (list[list[int]]) confusion matrix
 
@@ -151,7 +152,7 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
         if (index + 1) % save_every == 0 or index == len(prompt_list) - 1:
             store_partial_results(index, resume_dir, predictions, all_label_probs)
             tqdm.write(f"Saved checkpoint at step {index + 1}")
-            
+
             # evaluate intermediate performance
             cf = confusion_matrix(labels[:len(predictions)], predictions)
             acc, _ = classification_accuracy(predictions, labels[:len(predictions)])
@@ -167,7 +168,7 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
         store_fail_examples(fail_examples, failures_csv_path)
         print(f"\nSaved {len(fail_examples)} failure cases to {failures_csv_path}")
 
-    return final_accuracy, all_label_probs, cf
+    return final_accuracy, predictions, all_label_probs, cf
 
 
 def intialize_resume_logic(resume, model, dataset_name, save_dir, repE):

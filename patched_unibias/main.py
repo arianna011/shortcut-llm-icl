@@ -10,7 +10,9 @@ from utils import *
 import argparse
 import random
 from evaluation import ICL_evaluation#, calibration_evaluation
+from logging import log_evaluation_run
 from pathlib import Path
+from extract_activations import DATASETS_TO_TASKS
 #from FFN_manipulate import *
 #from attention_manipulate import *
 
@@ -43,7 +45,10 @@ parser.add_argument('--activations', type=str, default=None, help="Path to the f
 parser.add_argument('--layers', type=int, nargs='+', default=[], help="Layers to inject representantion control into") 
 parser.add_argument('--tokens', type=int, default=10, help="Max new tokens to generate") 
 parser.add_argument('--resume', type=str, choices=["true", "false"], default="false", help="Enable resume of previous interrupted evaluation")
+
+#Added logging options
 parser.add_argument('--fail_csv_path', type=str, default=None, help="Path to the file where to save failures examples")
+parser.add_argument('--log_on_WB', type=str, choices=["true", "false"], default="true", help="Enable logging with Weights and Bias")
 
 args = parser.parse_args()
 
@@ -64,6 +69,7 @@ activations = args.activations
 rep_layers = args.layers
 new_tokens = args.tokens
 eval_resume = args.resume.lower() == "true"
+log_WB = args.log_on_WB.lower() == "true"
 fail_csv_path = args.fail_csv_path
 
 
@@ -130,6 +136,8 @@ def main():
     # find all possible token ids for labels
     gt_ans_ids_list = find_possible_ids_for_labels(ans_label_list, tokenizer)
 
+    class_labels = [DATASETS_TO_TASKS[dataset_name].reference_gen_to_labels(ans[0]) for ans in ans_label_list]
+
     s = ""
     if RepE:
         s += f" activations {activations}"
@@ -138,13 +146,23 @@ def main():
                "num shot: " + str(num_shot) + " new tokens: " + str(new_tokens) + " repE: " + str(RepE) + s)
 
     # evaluate performance
-    final_acc, all_label_probs, cf = ICL_evaluation(model, tokenizer, device, prompt_list, test_labels, 
+    final_acc, predictions, all_label_probs, cf = ICL_evaluation(model, tokenizer, device, prompt_list, test_labels, 
                                                     gt_ans_ids_list, dataset_name, 
                                                     repE=RepE, activations_path=activations,
                                                     gen_tokens=new_tokens,layers=rep_layers, 
                                                     resume=eval_resume, failures_csv_path=fail_csv_path)
-    write_json(record_file_path, final_acc + str(cf))
 
+    write_json(record_file_path, final_acc + str(cf))
+    if log_WB:
+        log_evaluation_run(dataset_name,
+                           num_shot,
+                           RepE,
+                           final_acc,
+                           predictions,
+                           test_labels,
+                           all_label_probs,
+                           class_labels
+                           )
 
 if __name__ == "__main__":
     main()
