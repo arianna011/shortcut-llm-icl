@@ -37,8 +37,6 @@ class Task(Enum):
             return f'Premise: {prem}\nHypothesis: {hyp}\nAnswer (choose only one: yes / no / maybe): '
     
 
-
-
 def load_nli_shortcuts_from_tsv(paths: Union[str, List[str]]) -> pd.DataFrame:
     """
     Load one or more ShortcutSuite TSV files in a single pandas dataframe

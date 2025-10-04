@@ -30,7 +30,7 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
                    save_every: int = 100, 
                    save_dir: str = "results_tmp", 
                    resume: bool = False,
-                   failures_csv_path: str = "") -> tuple[float, List[List[float]], List[List[int]]]:
+                   failures_csv_path: str = None) -> tuple[float, List[List[float]], List[List[int]]]:
     """
     Evaluate the ICL accuracy of the input model on the provided prompts.
 
@@ -151,6 +151,7 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
         if (index + 1) % save_every == 0 or index == len(prompt_list) - 1:
             store_partial_results(index, resume_dir, predictions, all_label_probs)
             tqdm.write(f"Saved checkpoint at step {index + 1}")
+            
             # evaluate intermediate performance
             cf = confusion_matrix(labels[:len(predictions)], predictions)
             acc, _ = classification_accuracy(predictions, labels[:len(predictions)])
