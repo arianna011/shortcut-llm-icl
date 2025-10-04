@@ -136,7 +136,7 @@ def main():
     # find all possible token ids for labels
     gt_ans_ids_list = find_possible_ids_for_labels(ans_label_list, tokenizer)
 
-    class_labels = [DATASETS_TO_TASKS[dataset_name].reference_gen_to_labels(ans[0]) for ans in ans_label_list]
+    class_labels = [DATASETS_TO_TASKS[dataset_name].reference_gen_to_labels()[ans[0]] for ans in ans_label_list]
 
     s = ""
     if RepE:
