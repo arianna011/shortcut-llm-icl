@@ -14,7 +14,7 @@ import gc
 from accelerate.utils import release_memory
 from tqdm import tqdm
 import csv, json
-from ..representation_engineering import repe_pipeline_registry
+from representation_engineering import repe_pipeline_registry
 import wandb
 from .logging import WB_USER, WB_TEAM, WB_PROJECT_NAME
 
