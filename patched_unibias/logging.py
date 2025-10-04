@@ -19,7 +19,9 @@ def log_dataset_artifact(
     size: int,
     columns: list[str],
     labels: list[str],
-    shortcut: Optional[str] = None,
+    shortcut: str,
+    selection_method: str,
+    random_seed: int,
     metadata: Optional[Dict[str, Any]] = None,
     description: Optional[str] = None
 ):
@@ -40,12 +42,13 @@ def log_dataset_artifact(
     metadata.update({
         "dataset_name":dataset_name,
         "task": task,
-        "examples": size,
+        "n_examples": size,
         "columns": columns,
-        "labels": labels
+        "labels": labels,
+        "shortcut_type": shortcut,
+        "selection_method": selection_method,
+        "random_seed": random_seed
     })
-    if shortcut:
-        metadata["shortcut_type"] = shortcut
 
     artifact = wandb.Artifact(
         name=artifact_name,
@@ -131,7 +134,7 @@ def log_evaluation_run(
         class_names: Optional class labels for confusion matrix.
         tags: Optional list of run tags.
     """
-    run = wandb.init(project=project, name=name, tags=tags or [])
+    run = wandb.init(project=WB_PROJECT_NAME, name=name, tags=tags or [])
 
     # Link activation artifact as input
     activation_artifact = run.use_artifact(f"{activations_artifact_name}:latest")
