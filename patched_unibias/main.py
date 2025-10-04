@@ -12,7 +12,7 @@ import random
 from .evaluation import ICL_evaluation#, calibration_evaluation
 from .logging import log_evaluation_run
 from pathlib import Path
-from ..extract_activations import DATASETS_TO_TASKS
+from extract_activations import DATASETS_TO_TASKS
 #from FFN_manipulate import *
 #from attention_manipulate import *
 
