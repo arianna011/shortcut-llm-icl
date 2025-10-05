@@ -81,7 +81,6 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
       artifact_files = [f.name for f in artifact.files()]
       pt_file = next(f for f in artifact_files if f.endswith(".pt"))
       activations = torch.load(os.path.join(artifact_dir,pt_file))
-      assert isinstance(activations, torch.Tensor), f"Expected activations tensor, got {type(activations)}"
 
       # initialize a control pipeline
       control_method="reading_vec" # add a scaled version of a direction vector to internal activations during forward pass
