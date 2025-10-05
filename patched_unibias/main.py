@@ -168,7 +168,7 @@ def main():
     write_json(record_file_path, final_acc + str(cf))
     if log_WB:
         log_evaluation_run( model_name=model_name,
-                            dataset_name=dataset_name,
+                            eval_dataset=dataset_name,
                             ICL_shots=num_shot,
                             repE_active=RepE,
                             accuracy=final_acc,
