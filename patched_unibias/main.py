@@ -6,13 +6,22 @@ import json
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 import transformers
 import torch
-from utils import *
+try:
+    # works when imported as a package (e.g. from Colab)
+    from .utils import *
+    from .evaluation import ICL_evaluation#, calibration_evaluation
+    from .WB_logging import log_evaluation_run
+except ImportError:
+    # works when run directly as a script
+    from utils import *
+    from evaluation import ICL_evaluation#, calibration_evaluation
+    from WB_logging import log_evaluation_run
+    
+from extract_activations import DATASETS_TO_TASKS
 import argparse
 import random
-from evaluation import ICL_evaluation#, calibration_evaluation
-from WB_logging import log_evaluation_run
 from pathlib import Path
-from extract_activations import DATASETS_TO_TASKS
+
 #from FFN_manipulate import *
 #from attention_manipulate import *
 

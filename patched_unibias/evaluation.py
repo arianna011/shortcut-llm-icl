@@ -5,7 +5,6 @@ import pickle
 from sklearn.metrics import confusion_matrix
 from sklearn.mixture import GaussianMixture
 from scipy.optimize import linear_sum_assignment
-from .utils import *
 from transformers import pipeline
 import sys
 import os
@@ -16,7 +15,12 @@ from tqdm import tqdm
 import csv, json
 from representation_engineering import repe_pipeline_registry
 import wandb
-from .WB_logging import WB_USER, WB_TEAM, WB_PROJECT_NAME
+try:
+    from .utils import *
+    from .WB_logging import WB_USER, WB_TEAM, WB_PROJECT_NAME
+except ImportError:
+    from utils import *
+    from WB_logging import WB_USER, WB_TEAM, WB_PROJECT_NAME
 
 def ICL_evaluation(model: transformers.PreTrainedModel, 
                    tokenizer: transformers.AutoTokenizer,
