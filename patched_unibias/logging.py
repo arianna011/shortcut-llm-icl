@@ -99,7 +99,7 @@ def log_dataset_artifact(
     print(f"✅ Logged dataset artifact: {artifact_name}")
 
 
-def log_activation_artifact(
+def log_activations_artifact(
     activations_path: str,
     dataset_artifact_name: str,
     coeff: float,
@@ -145,7 +145,7 @@ def log_activation_artifact(
         metadata=metadata,
     )
     artifact.add_file(activations_path)
-    artifact.add_reference(dataset_artifact)
+    artifact.add_reference(f"wandb-artifact://{dataset_artifact.name}")
 
     wandb.log_artifact(artifact)
     wandb.finish()
