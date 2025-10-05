@@ -145,7 +145,7 @@ def log_activations_artifact(
         metadata=metadata,
     )
     artifact.add_file(activations_path)
-    artifact.add_reference(f"wandb-artifact://{dataset_artifact.name}")
+    artifact.add_reference(f"wandb-artifact://{dataset_artifact.source_name}")
 
     wandb.log_artifact(artifact)
     wandb.finish()
