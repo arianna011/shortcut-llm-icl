@@ -16,7 +16,7 @@ from tqdm import tqdm
 import csv, json
 from representation_engineering import repe_pipeline_registry
 import wandb
-from .logging import WB_USER, WB_TEAM, WB_PROJECT_NAME
+from .WB_logging import WB_USER, WB_TEAM, WB_PROJECT_NAME
 
 def ICL_evaluation(model: transformers.PreTrainedModel, 
                    tokenizer: transformers.AutoTokenizer,

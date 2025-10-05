@@ -1,4 +1,4 @@
 #from .main import main
 from .utils import *
 from .evaluation import ICL_evaluation
-from .logging import *
+from .WB_logging import *
