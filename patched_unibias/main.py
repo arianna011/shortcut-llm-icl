@@ -6,11 +6,11 @@ import json
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 import transformers
 import torch
-from .utils import *
+from utils import *
 import argparse
 import random
-from .evaluation import ICL_evaluation#, calibration_evaluation
-from .WB_logging import log_evaluation_run
+from evaluation import ICL_evaluation#, calibration_evaluation
+from WB_logging import log_evaluation_run
 from pathlib import Path
 from extract_activations import DATASETS_TO_TASKS
 #from FFN_manipulate import *
