@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Dict, Any, Union, Optional
 from enum import Enum
 import matplotlib.pyplot as plt
+from sklearn.metrics import f1_score
 
 WB_PROJECT_NAME = "shortcut-repe"
 WB_TEAM = "paolini-1943164-sapienza-universit-di-roma"
@@ -29,7 +30,6 @@ def get_dataset_artifact_name(
 def get_activations_artifact_name(
     dataset_artifact_name: str,
     coeff: float,
-    hidden_layers: list[int],
     direction_method: str,
     clean_instruction: str,
     dirty_instruction: str, 
@@ -41,9 +41,8 @@ def get_activations_artifact_name(
         shuffle_str = "_no_shuffle"
     if clean_instruction != dirty_instruction:
         instr_str = "_custom_instr"
-    hidden_layers_str = "_".join(map(str, hidden_layers))
 
-    return f'coeff_{coeff}{shuffle_str}{instr_str}_layers_{hidden_layers_str}_{direction_method}_{dataset_artifact_name}'
+    return f'coeff_{coeff}{shuffle_str}{instr_str}_{direction_method}_{dataset_artifact_name}'
     
 
 
@@ -119,7 +118,7 @@ def log_activation_artifact(
     """
 
     artifact_name = get_activations_artifact_name(
-        dataset_artifact_name, coeff, hidden_layers, direction_method, clean_instruction, dirty_instruction, shuffled_data
+        dataset_artifact_name, coeff, direction_method, clean_instruction, dirty_instruction, shuffled_data
     )
 
     wandb.init(project=WB_PROJECT_NAME, name=f"log_{artifact_name}")
@@ -156,6 +155,7 @@ def log_activation_artifact(
 # LOGGING EVALUATION RUN ==============================================================================================================
 
 def log_evaluation_run(
+    model_name: str,
     eval_dataset: str,
     ICL_shots: int,
     repE_active: bool,
@@ -165,37 +165,47 @@ def log_evaluation_run(
     all_label_probs: list[list[float]],
     class_names: list[str],
     activations_artifact_name: Optional[str] = None,
+    intervention_layers: Optional[list[int]] = None,
+    control_method: Optional[str] = None,
+    block_name: Optional[str] = None,
     tags: Optional[list] = None
 ):
     """
     Creates a W&B run for evaluation results using an activation artifact as input.
-
-    Args:
-        project: W&B project name.
-        name: Run name (e.g. "evaluate_layer12_rte_shortcut").
-        activation_artifact_name: Activation artifact name to use as input.
-        results: Dictionary of metrics to log (e.g., {"accuracy": 0.87}).
-        table_data: Optional list of (id, y_true, y_pred) tuples for logging results.
-        class_names: Optional class labels for confusion matrix.
-        tags: Optional list of run tags.
     """
-    run_name = f"{eval_dataset}_{ICL_shots}_shots"
+    run_name = f"{model_name}_{eval_dataset}_{ICL_shots}_shots"
+
+    config={
+        "model": model_name,
+        "dataset": eval_dataset,
+        "num_shots": ICL_shots,
+        "repE_enabled": repE_active}
+
     if repE_active:
         assert activations_artifact_name, "RepE is active, please provide the activations artifact name"
+        assert intervention_layers, "RepE is active, please provide the list of hidden layers for RepE Control"
+        first_l, last_l = intervention_layers[0], intervention_layers[-1]
+        run_name += f'_layers_{first_l}_{last_l}'
         run_name += f'_activations_{activations_artifact_name}'
+
+        config.update({"intervention_layers": intervention_layers, "control_method": control_method, 
+                       "block_name": block_name, "activations": activations_artifact_name})  
     else:
         run_name += f'_baseline'
 
-    run = wandb.init(project=WB_PROJECT_NAME, name=run_name, tags=tags or [])
+    run = wandb.init(project=WB_PROJECT_NAME, name=run_name, job_type="evaluation", config=config, tags=tags or [])
 
     if repE_active:
         # link activations artifact as input
-        activation_artifact = run.use_artifact(f"{activations_artifact_name}:latest")
+        try:
+            activation_artifact = run.use_artifact(f"{activations_artifact_name}:latest")
+        except wandb.CommError:
+            print(f"⚠️ Warning: Artifact {activations_artifact_name} not found.")
 
     results = {
         "accuracy": accuracy,
+        "f1_macro": f1_score(gt_labels, predictions, average="macro")
     }
-    # log metrics
     wandb.log(results)
 
     table_columns = ["id", "true", "pred"] + class_names

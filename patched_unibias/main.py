@@ -42,6 +42,7 @@ parser.add_argument('--Calibration', type=str, choices=["true", "false"], defaul
 #Added support for Representation Engineering modifications to LLM activations
 parser.add_argument('--RepE', type=str, choices=["true", "false"], default="false", help="Enable Representation Engineering")
 parser.add_argument('--activations', type=str, default=None, help="Name of the WB artifact containing RepE activations")
+parser.add_argument('--intervention_layers', type=str, default=None, help="List of hidden layers where to inject RepE control")
 parser.add_argument('--tokens', type=int, default=10, help="Max new tokens to generate") 
 parser.add_argument('--resume', type=str, choices=["true", "false"], default="false", help="Enable resume of previous interrupted evaluation")
 
@@ -65,6 +66,7 @@ Unibias = args.UniBias.lower() == "true"
 Calibration = args.Calibration.lower() == "true"
 RepE = args.RepE.lower() == "true"
 activations = args.activations
+intervention_layers = args.intervention_layers
 new_tokens = args.tokens
 eval_resume = args.resume.lower() == "true"
 log_WB = args.log_on_WB.lower() == "true"
@@ -137,8 +139,15 @@ def main():
     class_labels = [DATASETS_TO_TASKS[dataset_name].reference_gen_to_labels()[ans[0]] for ans in ans_label_list]
 
     s = ""
+    control_method = None
+    block_name = None
     if RepE:
+        assert activations and intervention_layers, "Please provide non-empty RepE params"
         s += f" activations {activations}"
+        control_method = "reading_vec"
+        block_name = "decoder_block"
+        intervention_layers = list(map((int, intervention_layers.split())))
+
     write_json(record_file_path, 
                "num shot: " + str(num_shot) + " new tokens: " + str(new_tokens) + " repE: " + str(RepE) + s)
 
@@ -146,19 +155,23 @@ def main():
     final_acc, predictions, all_label_probs, cf = ICL_evaluation(model, tokenizer, device, prompt_list, test_labels, 
                                                     gt_ans_ids_list, dataset_name, 
                                                     repE=RepE, activations_art_name=activations,
-                                                    gen_tokens=new_tokens,                                                    resume=eval_resume, failures_csv_path=fail_csv_path)
+                                                    gen_tokens=new_tokens, intervention_layers = intervention_layers,                                                  resume=eval_resume, failures_csv_path=fail_csv_path)
 
     write_json(record_file_path, final_acc + str(cf))
     if log_WB:
-        log_evaluation_run(dataset_name,
-                           num_shot,
-                           RepE,
-                           final_acc,
-                           predictions,
-                           test_labels,
-                           all_label_probs,
-                           class_labels,
-                           activations
+        log_evaluation_run( model_name=model_name,
+                            dataset_name=dataset_name,
+                            ICL_shots=num_shot,
+                            repE_active=RepE,
+                            accuracy=final_acc,
+                            predictions=predictions,
+                            gt_labels=test_labels,
+                            all_label_probs=all_label_probs,
+                            class_names=class_labels,
+                            activations_artifact_name=activations,
+                            intervention_layers=intervention_layers,
+                            control_method=control_method,
+                            block_name=block_name
                            )
 
 if __name__ == "__main__":

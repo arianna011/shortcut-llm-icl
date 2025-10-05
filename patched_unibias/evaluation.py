@@ -28,6 +28,7 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
                    gen_tokens: int = 10,
                    repE: bool = False, 
                    activations_art_name: str = "",
+                   intervention_layers: List[int] = None,
                    save_every: int = 100, 
                    save_dir: str = "results_tmp", 
                    resume: bool = False,
@@ -45,7 +46,8 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
         dataset_name: name of the dataset
         gen_tokens: maximum number of new tokens to generate
         repE: whether to use Representantion Engineering
-        activations: name of the WB artifact containing RepReading directions
+        activations_art_name: name of the WB artifact containing RepReading directions
+        intervention_layers: list of hidden layers where to inject RepE Control
         save_every: number of samples to process before storing intermediate results
         save_dir: where to store intermediate results
         resume: whether to restart an interrupted evaluation from the last stored intermediate results
@@ -75,7 +77,6 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
       artifact_files = [f.name for f in artifact.files()]
       pt_file = next(f for f in artifact_files if f.endswith(".pt"))
       activations = torch.load(f"{artifact_dir}/{pt_file}")
-      layers = artifact.metadata["hidden_layers"]
       assert isinstance(activations, torch.Tensor), f"Expected activations tensor, got {type(activations)}"
 
       # initialize a control pipeline
@@ -84,7 +85,7 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
           "rep-control",
           model=model,
           tokenizer=tokenizer,
-          layers=layers, # layers to inject control in
+          layers=intervention_layers,
           control_method=control_method)
 
     # resume interrupted evaluation if requested
