@@ -121,8 +121,8 @@ def log_activations_artifact(
         dataset_artifact_name, coeff, direction_method, clean_instruction, dirty_instruction, shuffled_data
     )
 
-    wandb.init(project=WB_PROJECT_NAME, name=f"log_{artifact_name}")
-    dataset_artifact = wandb.use_artifact(f"{dataset_artifact_name}:latest")
+    run = wandb.init(project=WB_PROJECT_NAME, name=f"log_{artifact_name}")
+    dataset_artifact = run.use_artifact(f"{WB_TEAM}/{WB_PROJECT_NAME}/{dataset_artifact_name}:latest")
     dataset_metadata = dataset_artifact.metadata
        
     if metadata is None:
@@ -145,10 +145,9 @@ def log_activations_artifact(
         metadata=metadata,
     )
     artifact.add_file(activations_path)
-    artifact.add_reference(f"wandb-artifact://{dataset_artifact.source_name}")
 
-    wandb.log_artifact(artifact)
-    wandb.finish()
+    run.log_artifact(artifact)
+    run.finish()
     print(f"✅ Logged activation artifact: {artifact_name}")
 
 
@@ -198,7 +197,7 @@ def log_evaluation_run(
     if repE_active:
         # link activations artifact as input
         try:
-            activation_artifact = run.use_artifact(f"{activations_artifact_name}:latest")
+            activation_artifact = run.use_artifact(f"{WB_TEAM}/{WB_PROJECT_NAME}/{activations_artifact_name}:latest")
         except wandb.CommError:
             print(f"⚠️ Warning: Artifact {activations_artifact_name} not found.")
 
