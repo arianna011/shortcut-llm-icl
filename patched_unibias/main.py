@@ -51,7 +51,7 @@ parser.add_argument('--Calibration', type=str, choices=["true", "false"], defaul
 #Added support for Representation Engineering modifications to LLM activations
 parser.add_argument('--RepE', type=str, choices=["true", "false"], default="false", help="Enable Representation Engineering")
 parser.add_argument('--activations', type=str, default=None, help="Name of the WB artifact containing RepE activations")
-parser.add_argument('--intervention_layers', type=str, default=None, help="List of hidden layers where to inject RepE control")
+parser.add_argument('--intervention_layers', type=int, nargs='+', default=None, help="List of hidden layers where to inject RepE control")
 parser.add_argument('--tokens', type=int, default=10, help="Max new tokens to generate") 
 parser.add_argument('--resume', type=str, choices=["true", "false"], default="false", help="Enable resume of previous interrupted evaluation")
 
@@ -155,7 +155,6 @@ def main():
         s += f" activations {activations}"
         control_method = "reading_vec"
         block_name = "decoder_block"
-        intervention_layers = list(map((int, intervention_layers.split())))
 
     write_json(record_file_path, 
                "num shot: " + str(num_shot) + " new tokens: " + str(new_tokens) + " repE: " + str(RepE) + s)
