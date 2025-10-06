@@ -216,9 +216,16 @@ def log_evaluation_run(
 
     wandb.log({"predictions_table": table})
 
+    print("CLASS NAMES")
+    print(class_names)
+    print("TRUE")
+    print(gt_labels)
+    print("PREDICTED")
+    print(predictions)
+
     wandb.log({
             "confusion_matrix": wandb.plot.confusion_matrix(
-                y_true=gt_labels, preds=predictions, class_names=class_names
+                y_true=gt_labels, preds=predictions#, class_names=class_names
             )
         })
     wandb.finish()
