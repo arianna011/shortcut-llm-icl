@@ -165,7 +165,7 @@ def main():
                                                     repE=RepE, activations_art_name=activations,
                                                     gen_tokens=new_tokens, intervention_layers = intervention_layers,                                                  resume=eval_resume, failures_csv_path=fail_csv_path)
 
-    write_json(record_file_path, final_acc + str(cf))
+    write_json(record_file_path, f"final accuracy: {final_acc} {str(cf)}")
     if log_WB:
         log_evaluation_run( model_name=model_name,
                             eval_dataset=dataset_name,
