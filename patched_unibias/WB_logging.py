@@ -1,6 +1,7 @@
 import json
 import torch
 import wandb
+import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, Union, Optional
@@ -163,6 +164,7 @@ def log_evaluation_run(
     all_label_probs: list[list[float]],
     class_names: list[str],
     prompt_list: list[str],
+    confusion_matrix: np.ndarray,
     activations_artifact_name: Optional[str] = None,
     intervention_layers: Optional[list[int]] = None,
     control_method: Optional[str] = None,
@@ -216,22 +218,10 @@ def log_evaluation_run(
 
     wandb.log({"predictions_table": table})
 
-    if isinstance(gt_labels[0], int):
-        y_true = [class_names[i] for i in gt_labels]
-    else:
-        y_true = gt_labels
-
-    if isinstance(predictions[0], int):
-        y_pred = [class_names[i] for i in predictions]
-    else:
-        y_pred = predictions
-
-    cm = confusion_matrix(y_true, y_pred, labels=class_names)
-
     cm_table = wandb.Table(columns=["True", "Predicted", "Count"])
     for i, true_label in enumerate(class_names):
         for j, pred_label in enumerate(class_names):
-            cm_table.add_data(true_label, pred_label, int(cm[i][j]))
+            cm_table.add_data(true_label, pred_label, int(confusion_matrix[i][j]))
 
     wandb.log({"confusion_matrix_table": cm_table})
 
