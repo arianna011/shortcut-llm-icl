@@ -16,28 +16,48 @@ from tqdm import tqdm
 
 class Task(Enum):
     NLI = 0
+    BINARY_NLI = 1
 
     def reference_dataset_name(self):
         if self is Task.NLI:
             return "mnli"
+        elif self is Task.BINARY_NLI:
+            return "rte"
+        else:
+            return None
         
     def reference_instruction(self):
         if self is Task.NLI:
             return "Given the premise, are we justified in saying the hypothesis? yes, no, or maybe.\n\n"
+        elif self is Task.BINARY_NLI:
+            return "Given the premise, are we justified in saying the hypothesis? yes or no.\n\n"
+        else:
+            return None
         
     def reference_gen_to_labels(self):
         if self is Task.NLI:
             return {"yes": "entailment",
                     "maybe": "neutral", 
                     "no": "contradiction"}
+        elif self is Task.BINARY_NLI:
+            return {"yes": "entailment",
+                    "no": "not entailment"} 
+        else:
+            return None
         
     def format_input(self, input: Union[str, tuple[str]]):
         if self is Task.NLI:
             assert isinstance(input, tuple)
             prem, hyp = input
             return f'Premise: {prem}\nHypothesis: {hyp}\nAnswer (choose only one: yes / no / maybe): '
+        elif self is Task.BINARY_NLI:
+            assert isinstance(input, tuple)
+            prem, hyp = input
+            return f'Premise: {prem}\nHypothesis: {hyp}\nAnswer (choose only one: yes / no): '
+        else:
+            return None
 
-DATASETS_TO_TASKS = {"rte": Task.NLI}       
+DATASETS_TO_TASKS = {"mnli":Task.NLI, "rte": Task.BINARY_NLI}      
     
 
 def load_nli_shortcuts_from_tsv(paths: Union[str, List[str]]) -> pd.DataFrame:
