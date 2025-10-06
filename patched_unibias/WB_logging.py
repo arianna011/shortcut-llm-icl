@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, Any, Union, Optional
 from enum import Enum
 import matplotlib.pyplot as plt
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
 
 WB_PROJECT_NAME = "shortcut-repe"
 WB_TEAM = "paolini-1943164-sapienza-universit-di-roma"
@@ -216,18 +216,15 @@ def log_evaluation_run(
 
     wandb.log({"predictions_table": table})
 
-    print("CLASS NAMES")
-    print(class_names)
-    print("TRUE")
-    print(gt_labels)
-    print("PREDICTED")
-    print(predictions)
+    cm = confusion_matrix(gt_labels, predictions, labels=class_names)
 
-    wandb.log({
-            "confusion_matrix": wandb.plot.confusion_matrix(
-                y_true=gt_labels, preds=predictions#, class_names=class_names
-            )
-        })
+    cm_table = wandb.Table(columns=["True", "Predicted", "Count"])
+    for i, true_label in enumerate(class_names):
+        for j, pred_label in enumerate(class_names):
+            cm_table.add_data(true_label, pred_label, int(cm[i][j]))
+
+    wandb.log({"confusion_matrix_table": cm_table})
+
     wandb.finish()
     print(f"✅ Logged evaluation run: {run_name}")
 
