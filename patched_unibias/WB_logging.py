@@ -216,7 +216,17 @@ def log_evaluation_run(
 
     wandb.log({"predictions_table": table})
 
-    cm = confusion_matrix(gt_labels, predictions, labels=class_names)
+    if isinstance(gt_labels[0], int):
+        y_true = [class_names[i] for i in gt_labels]
+    else:
+        y_true = gt_labels
+
+    if isinstance(predictions[0], int):
+        y_pred = [class_names[i] for i in predictions]
+    else:
+        y_pred = predictions
+
+    cm = confusion_matrix(y_true, y_pred, labels=class_names)
 
     cm_table = wandb.Table(columns=["True", "Predicted", "Count"])
     for i, true_label in enumerate(class_names):
