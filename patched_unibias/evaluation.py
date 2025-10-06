@@ -172,14 +172,13 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
     acc, _ = classification_accuracy(predictions, labels[:len(predictions)])
     print('Final classification accuracy:', acc)
     print(cf)
-    final_accuracy = '\n\nclassification_accuracy: ' + str(acc)
 
     # optionally store fail examples on file
     if fail_examples:
         store_fail_examples(fail_examples, failures_csv_path)
         print(f"\nSaved {len(fail_examples)} failure cases to {failures_csv_path}")
 
-    return final_accuracy, predictions, all_label_probs, cf
+    return acc, predictions, all_label_probs, cf
 
 
 def intialize_resume_logic(resume, model, dataset_name, save_dir, repE):

@@ -163,6 +163,7 @@ def log_evaluation_run(
     gt_labels: list[int],
     all_label_probs: list[list[float]],
     class_names: list[str],
+    prompt_list: list[str],
     activations_artifact_name: Optional[str] = None,
     intervention_layers: Optional[list[int]] = None,
     control_method: Optional[str] = None,
@@ -207,22 +208,25 @@ def log_evaluation_run(
     }
     wandb.log(results)
 
-    table_columns = ["id", "true", "pred"] + class_names
+    table_columns = ["id", "prompt", "true", "pred"] + class_names
     table = wandb.Table(columns=table_columns)
 
-    for idx, (true_idx, pred_idx, probs) in enumerate(zip(gt_labels, predictions, all_label_probs)):
-        row = [idx, class_names[true_idx], class_names[pred_idx]] + probs
+    for idx, (prompt, true_idx, pred_idx, probs) in enumerate(zip(prompt_list, gt_labels, predictions, all_label_probs)):
+        row = [idx, prompt, class_names[true_idx], class_names[pred_idx]] + probs
         table.add_data(*row)
 
     wandb.log({"predictions_table": table})
 
     y_true = [class_names[t] for t in gt_labels]
     y_pred = [class_names[p] for p in predictions]
-    wandb.log({
-        "confusion_matrix": wandb.plot.confusion_matrix(
-            y_true=y_true, preds=y_pred, class_names=class_names
-        )
-    })
+    try:
+        wandb.log({
+            "confusion_matrix": wandb.plot.confusion_matrix(
+                y_true=y_true, preds=y_pred, class_names=class_names
+            )
+        })
+    except KeyError as e:
+        print(f"⚠️ Skipping confusion matrix: label {e} not in class_names {class_names}")
 
     wandb.finish()
     print(f"✅ Logged evaluation run: {run_name}")
