@@ -176,6 +176,7 @@ def main():
                             gt_labels=test_labels,
                             all_label_probs=all_label_probs,
                             class_names=class_labels,
+                            prompt_list=prompt_list,
                             activations_artifact_name=activations,
                             intervention_layers=intervention_layers,
                             control_method=control_method,
