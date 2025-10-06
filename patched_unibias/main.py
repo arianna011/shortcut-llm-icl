@@ -171,7 +171,6 @@ def main():
                             eval_dataset=dataset_name,
                             ICL_shots=num_shot,
                             repE_active=RepE,
-                            accuracy=final_acc,
                             predictions=predictions,
                             gt_labels=test_labels,
                             all_label_probs=all_label_probs,

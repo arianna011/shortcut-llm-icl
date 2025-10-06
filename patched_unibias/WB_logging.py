@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, Any, Union, Optional
 from enum import Enum
 import matplotlib.pyplot as plt
-from sklearn.metrics import f1_score
+from sklearn.metrics import accuracy_score, f1_score
 
 WB_PROJECT_NAME = "shortcut-repe"
 WB_TEAM = "paolini-1943164-sapienza-universit-di-roma"
@@ -158,7 +158,6 @@ def log_evaluation_run(
     eval_dataset: str,
     ICL_shots: int,
     repE_active: bool,
-    accuracy: float,
     predictions: list[int],
     gt_labels: list[int],
     all_label_probs: list[list[float]],
@@ -203,7 +202,7 @@ def log_evaluation_run(
             print(f"⚠️ Warning: Artifact {activations_artifact_name} not found.")
 
     results = {
-        "accuracy": accuracy,
+        "accuracy": accuracy_score(gt_labels, predictions),
         "f1_macro": f1_score(gt_labels, predictions, average="macro")
     }
     wandb.log(results)
@@ -217,16 +216,12 @@ def log_evaluation_run(
 
     wandb.log({"predictions_table": table})
 
-    y_true = [class_names[t] for t in gt_labels]
-    y_pred = [class_names[p] for p in predictions]
-    try:
-        wandb.log({
+    wandb.log({
             "confusion_matrix": wandb.plot.confusion_matrix(
-                y_true=y_true, preds=y_pred, class_names=class_names
+                y_true=gt_labels, preds=predictions, class_names=class_names
             )
         })
-    except KeyError as e:
-        print(f"⚠️ Skipping confusion matrix: label {e} not in class_names {class_names}")
-
     wandb.finish()
     print(f"✅ Logged evaluation run: {run_name}")
+
+    
