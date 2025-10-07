@@ -121,8 +121,9 @@ def prepare_shortcut_activations(
             dataset_artifact = None
     
     assert dataset_artifact, "Failure in dataset artifact retrieval"
-    df_file = dataset_artifact.get_path(f"{dataset_name}.json")   
-    with df_file.open() as f:
+    df_entry = dataset_artifact.get_entry(f"{dataset_name}.json")  
+    local_df_path = df_entry.download() 
+    with open(local_df_path, "r") as f:
         data = json.load(f)
 
     df = pd.DataFrame(data)
