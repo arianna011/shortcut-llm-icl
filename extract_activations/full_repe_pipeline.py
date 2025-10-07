@@ -212,8 +212,8 @@ def RepE_evaluation(
     training_dataset_shortcut_type: str,
     training_dataset_sel_method: L.SelectionMethod,
     training_dataset_random_seed: int,
-    activations_clean_istr: str,
-    activations_dirty_istr: str,
+    activations_clean_instr: str,
+    activations_dirty_instr: str,
     activations_data_shuffle: bool,
     activations_direction_method: str,
     activations_alpha_coeff: float,
@@ -242,8 +242,8 @@ def RepE_evaluation(
         dataset_artifact_name=training_dataset_art_name,
         coeff=activations_alpha_coeff,
         direction_method=activations_direction_method,
-        clean_instruction=activations_clean_istr,
-        dirty_instruction=activations_dirty_istr,
+        clean_instruction=activations_clean_instr,
+        dirty_instruction=activations_dirty_instr,
         shuffled_data=activations_data_shuffle)
     
     # check if the needed acrivations artifact already exists
@@ -264,8 +264,8 @@ def RepE_evaluation(
                                     num_samples=training_dataset_size,
                                     prompts_selec_method=training_dataset_sel_method,
                                     random_seed=training_dataset_random_seed, 
-                                    clean_instr=activations_clean_istr,
-                                    dirty_instr=activations_dirty_istr,
+                                    clean_instr=activations_clean_instr,
+                                    dirty_instr=activations_dirty_instr,
                                     shuffle_data=activations_data_shuffle,
                                     model_wrap=model_wrap,
                                     alpha_coeff=activations_alpha_coeff,
