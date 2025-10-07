@@ -222,7 +222,7 @@ def RepE_evaluation(
     eval_dataset_name: str,
     eval_num_shot: int,
     eval_intervention_layers: list[int],
-    eval_resume: bool,
+    eval_resume: str,
     training_dataset_num_shot: int = 0,
     training_max_ans_tokens: int = 5,
     training_logits_step: int = 0,
@@ -289,11 +289,11 @@ def RepE_evaluation(
         "python", "patched_unibias/main.py",
         "--dataset_name", eval_dataset_name,
         "--num_shot", str(eval_num_shot),
-        "--RepE", "True",
-        "--resume", str(eval_resume),
+        "--RepE", "true",
+        "--resume", eval_resume,
         "--activations", activations_art_name,
         "--intervention_layers", intervention_layers,
-        "--log_on_WB", "True"
+        "--log_on_WB", "true"
     ]
     print("Launching evaluation command:")
     print(" ".join(cmd))
