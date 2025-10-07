@@ -8,8 +8,10 @@ from collections.abc import Callable
 import torch
 from datasets import load_dataset
 import random
-#from rainbow_teaming import BaseLLM, EchoLLM
-from extract_activations import BaseLLM, EchoLLM
+try:
+    from rainbow_teaming import BaseLLM, EchoLLM
+except Exception:
+    from extract_activations import BaseLLM, EchoLLM
 import re
 from tqdm import tqdm
 
@@ -56,30 +58,30 @@ class Task(Enum):
             return f'Premise: {prem}\nHypothesis: {hyp}\nAnswer (choose only one: yes / no): '
         else:
             return None
+        
 
-DATASETS_TO_TASKS = {"mnli":Task.NLI, "rte": Task.BINARY_NLI}      
+DATASETS_TO_TASKS = {"mnli":Task.NLI, "rte": Task.BINARY_NLI}     
+SHORTCUT_SUITE_COLS = ["pairID", "sentence1", "sentence2", "gold_label"] 
+SHORTCUT_SUITE_LABELS = ["entailment", "neutral", "contradiction"]
     
 
 def load_nli_shortcuts_from_tsv(paths: Union[str, List[str]]) -> pd.DataFrame:
     """
     Load one or more ShortcutSuite TSV files in a single pandas dataframe
-    and keep only the relevant columns:
-    pairID, premise, hypothesis, gold_label, heuristic, subcase
+    and keep only the relevant columns
     """
     dfs = []
-    required_cols = ["pairID", "premise", "hypothesis", "gold_label", "heuristic", "subcase"]
     if isinstance(paths, str):
         paths = [paths]
     for path in paths:
         df = pd.read_csv(path, sep="\t", on_bad_lines="skip")
+        for col in SHORTCUT_SUITE_COLS:
+            assert col in df.columns, "This method accepts only ShortcutSuite .tsv files"
+        df = df[SHORTCUT_SUITE_COLS]
         df = df.rename(columns={
             "sentence1": "premise",
             "sentence2": "hypothesis"
         })
-        for col in required_cols:
-            if col not in df.columns:
-                df[col] = "unknown"
-        df = df[required_cols]
         dfs.append(df)
     return pd.concat(dfs, ignore_index=True)
 
@@ -88,7 +90,7 @@ def load_nli_shortcuts_from_folder(folder: str) -> pd.DataFrame:
     return load_nli_shortcuts_from_tsv(files)
 
 def create_paired_dataset(standard_df: pd.DataFrame, shortcut_df: pd.DataFrame, id_column: str = "pairID", 
-                          unknown_value: str = "unknown", clean_suffix: str = "_clean", dirty_suffix: str = "_dirty") -> pd.DataFrame:
+                          label_column: str = "gold_label", clean_suffix: str = "_clean", dirty_suffix: str = "_dirty") -> pd.DataFrame:
     """
     Given two dataframes, one with standard NLP statements, the other with injected shortcuts,
     pair the examples corresponding to the same original prompt (based on a column ID) and return a merged dataframe
@@ -102,19 +104,14 @@ def create_paired_dataset(standard_df: pd.DataFrame, shortcut_df: pd.DataFrame, 
         on=id_column,
         suffixes=(clean_suffix, dirty_suffix))
     
-    # remove duplicated columns and columns with 'unknown' value
-    for col in paired_df.columns:
-        if col.endswith(clean_suffix):
-            base = col[:-len(clean_suffix)]
-            other = base + dirty_suffix
-            if other in paired_df:
-                identical = paired_df[[col, other]].nunique(axis=1).max() == 1
-                all_unknown = paired_df[col].eq(unknown_value).all() and paired_df[other].eq(unknown_value).all()
-                if all_unknown: 
-                     paired_df = paired_df.drop(columns=[col,other])
-                elif identical:
-                    paired_df = paired_df.drop(columns=[other]).rename(columns={col: base})
-
+    assert paired_df.shape[0] != 0, "Datasets merge resulted in empty dataset"
+    
+    labels_clean_col = label_column + clean_suffix
+    labels_dirty_col = label_column + dirty_suffix
+    paired_df = paired_df[(paired_df[labels_clean_col].isin(SHORTCUT_SUITE_LABELS)) & (paired_df[labels_dirty_col].isin(SHORTCUT_SUITE_LABELS))]
+    assert (paired_df[labels_clean_col] == paired_df[labels_dirty_col]).all(), "Mismatch between the gold labels in clean and dirty datasets"
+    paired_df = paired_df.drop(columns=[labels_dirty_col]).rename(columns={labels_clean_col: label_column})
+   
     return paired_df
 
 def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[..., str]:
@@ -135,11 +132,15 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
     task_gen_to_labels = task.reference_gen_to_labels()
     task_instruction = task.reference_instruction()
     
-    if task == Task.NLI:
+    if task in [Task.NLI, Task.BINARY_NLI]:
 
         examples_dataset = load_dataset("nyu-mll/glue", task_dataset, split="train")
-        premises = examples_dataset['premise']
-        hypotheses = examples_dataset['hypothesis']
+        try: 
+            premises = examples_dataset['premise']
+            hypotheses = examples_dataset['hypothesis']
+        except KeyError:
+            premises = examples_dataset['sentence1']
+            hypotheses = examples_dataset['sentence2']
         labels = examples_dataset['label']
         answers = [list(task_gen_to_labels.keys())[i] for i in labels]
         example_pairs = list(zip(premises, hypotheses, answers))
@@ -157,11 +158,7 @@ def get_ICL_context_func(task: Task, num_shot: int, seed: int = 42) -> Callable[
 
         demonstration = task_instruction
         for idx in sampled_indices:
-            demo = (
-                f"Premise: {example_pairs[idx][0]}\n"
-                f"Hypothesis: {example_pairs[idx][1]}\n"
-                f"Answer (choose only one: yes / no / maybe): {example_pairs[idx][2]}\n\n"
-            )
+            demo = task.format_input(example_pairs[idx][0], example_pairs[idx][1]) + f"{example_pairs[idx][2]}\n\n"
             demonstration += demo
 
         def context_func(prem: str, hyp: str) -> str:
@@ -285,12 +282,14 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples:
     else:
         raise NotImplementedError
 
-if __name__ == '__main__':
+#if __name__ == '__main__':
     # df = load_nli_shortcuts_from_folder("data/ShortcutSuite/")
     # print(df.head())
     # show(df)
-    df_standard = load_nli_shortcuts_from_tsv("data/ShortcutSuite/dev_matched.tsv")
-    df_shortcut = load_nli_shortcuts_from_tsv("data/ShortcutSuite/dev_matched_negation.tsv")
-    df = create_paired_dataset(df_standard, df_shortcut)
+    # df_standard = load_nli_shortcuts_from_tsv("data/ShortcutSuite/dev_matched.tsv")
+    # df_shortcut = load_nli_shortcuts_from_tsv("data/ShortcutSuite/constituent.tsv")
+    # df = create_paired_dataset(df_standard, df_shortcut)
+    # print(df.columns)
+    # print(df.shape)
     #selected_df = select_shortcut_prompts(df, Task.NLI, size=10, model=EchoLLM(), num_shot=1)
     #show(df)
