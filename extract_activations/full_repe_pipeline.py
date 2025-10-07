@@ -2,10 +2,12 @@ import os
 from patched_unibias import WB_logging as L
 from extract_activations import load_shortcut_prompts as E
 from extract_activations import BaseLLM, HuggingFaceLLM
+from patched_unibias import main
 import random
 import numpy as np
 import wandb
 import json
+import subprocess
 import pandas as pd
 import torch
 from transformers import pipeline
@@ -201,61 +203,105 @@ def _format_data_nli(df, clean_instr, dirty_instr, shuffle):
   return np.concatenate(data).tolist(), labels
 
 
-# def RepE_evaluation(
-#     wb_config: Dict,
-#     overwrite_artifacts: bool,
-#     training_dataset_name: str,
-#     training_dataset_size: int,
-#     training_dataset_shortcut_type: str,
-#     training_dataset_sel_method: SelectionMethod,
-#     training_dataset_random_seed: int,
-#     activations_clean_istr: str,
-#     activations_dirty_istr: str,
-#     eval_dataset_name: str,
-#     task: str,
-#     model: BaseLLM,
-#     tokenizer: AutoTokenizer,
-#     layers: List):
+def RepE_evaluation(
+    repo_path: str,
+    drive_path: str,
+    overwrite_df_artifact: bool,
+    overwrite_act_artifact: bool,
+    training_dataset_name: str,
+    training_dataset_size: int,
+    training_dataset_shortcut_type: str,
+    training_dataset_sel_method: L.SelectionMethod,
+    training_dataset_random_seed: int,
+    activations_clean_istr: str,
+    activations_dirty_istr: str,
+    activations_data_shuffle: bool,
+    activations_direction_method: str,
+    activations_alpha_coeff: float,
+    model_wrap: BaseLLM,
+    eval_dataset_name: str,
+    eval_num_shot: int,
+    eval_intervention_layers: list[int],
+    eval_resume: bool,
+    training_dataset_num_shot: int = 0,
+    training_max_ans_tokens: int = 5,
+    training_logits_step: int = 0,
+    training_model_temperature: float = 0.0,
+    training_batch_size: int = 32,
+    training_debug: bool = False):
+
+    api = wandb.Api()
+
+    training_dataset_art_name = L.get_dataset_artifact_name(
+        dataset_name=training_dataset_name,
+        size=training_dataset_size,
+        shortcut=training_dataset_shortcut_type,
+        selection_method=training_dataset_sel_method,
+        random_seed=training_dataset_random_seed)
   
-#   alpha_coeff = wb_config["alpha_coeff"]
-#   direction_method = wb_config["direction_method"]
-#   activations_data_shuffle = wb_config["activations_data_shuffle"]
+    activations_art_name = L.get_activations_artifact_name(
+        dataset_artifact_name=training_dataset_art_name,
+        coeff=activations_alpha_coeff,
+        direction_method=activations_direction_method,
+        clean_instruction=activations_clean_istr,
+        dirty_instruction=activations_dirty_istr,
+        shuffled_data=activations_data_shuffle)
+    
+    # check if the needed acrivations artifact already exists
+    try:
+        activations_artifact = api.artifact(f"{L.WB_TEAM}/{L.WB_PROJECT_NAME}/{activations_art_name}:latest")
+    except wandb.CommError:
+        activations_artifact = None
+        print(f"Artifact {activations_art_name} not found. Starting creation...")
+    
+    if not activations_artifact or overwrite_act_artifact:
+        # create a new activations artifact
+        prepare_shortcut_activations(
+                                    repo_path=repo_path,
+                                    drive_path=drive_path,
+                                    overwrite_df_artifact=overwrite_df_artifact,
+                                    dataset_name=training_dataset_name,
+                                    shortcut_type=training_dataset_shortcut_type,
+                                    num_samples=training_dataset_size,
+                                    prompts_selec_method=training_dataset_sel_method,
+                                    random_seed=training_dataset_random_seed, 
+                                    clean_instr=activations_clean_istr,
+                                    dirty_instr=activations_dirty_istr,
+                                    shuffle_data=activations_data_shuffle,
+                                    model_wrap=model_wrap,
+                                    alpha_coeff=activations_alpha_coeff,
+                                    num_shot=training_dataset_num_shot,
+                                    max_ans_tokens=training_max_ans_tokens,
+                                    model_temperature=training_model_temperature,
+                                    logits_step=training_logits_step,
+                                    batch_size=training_batch_size,
+                                    debug=training_debug)
+                                        
+        try:
+            activations_artifact = api.artifact(f"{L.WB_TEAM}/{L.WB_PROJECT_NAME}/{activations_art_name}:latest")
+        except wandb.CommError:
+            activations_artifact = None
+    
+    assert activations_artifact, "Failure in activations artifact retrieval"
+    intervention_layers = " ".join(map(str,eval_intervention_layers))
+    cmd = [
+        "python", "patched_unibias/main.py",
+        "--dataset_name", eval_dataset_name,
+        "--num_shot", str(eval_num_shot),
+        "--RepE", "True",
+        "--resume", str(eval_resume),
+        "--activations", activations_art_name,
+        "--intervention_layers", intervention_layers,
+        "--log_on_WB", "True"
+    ]
+    print("Launching evaluation command:")
+    print(" ".join(cmd))
 
+    result = subprocess.run(cmd, text=True, capture_output=True)
 
-#   training_dataset_art_name = L.get_dataset_artifact_name(
-#       dataset_name=training_dataset_name,
-#       size=training_dataset_size,
-#       shortcut=training_dataset_shortcut_type,
-#       selection_method=training_dataset_sel_method,
-#       random_seed=training_dataset_random_seed)
-  
-#   activations_art_name = L.get_activations_artifact_name(
-#       dataset_artifact_name=training_dataset_art_name,
-#       coeff=alpha_coeff,
-#       direction_method=direction_method,
-#       clean_instruction=activations_clean_istr,
-#       dirty_instruction=activations_clean_istr,
-#       shuffled_data=activations_data_shuffle)
-  
-#   # if not already existing, or overwrite enabled, prepare shortcut activations
-#   if not overwrite_artifacts:
-#     try:
-#       activation_artifact = run.use_artifact(f"{WB_TEAM}/{WB_PROJECT_NAME}/{activations_artifact_name}:latest")
-#     except wandb.CommError:
-#       print(f"Artifact {activations_artifact_name} not found. Start creation.")
-
-#       # def 
-
-#   # if not already existing, or overwrite enabled, prepare training dataset
-#   training_dataset_art_name = L.get_dataset_artifact_name(
-#       dataset_name=training_dataset_name,
-#       size=training_dataset_size,
-#       shortcut=training_dataset_shortcut_type,
-#       selection_method=training_dataset_sel_method,
-#       random_seed=training_dataset_random_seed)
-  
-#   if not L.dataset_artifact_exists(training_dataset_art_name) or overwrite_artifacts:
-
-
-#   else:
-#     # use pre-existing artifact
+    print(result.stdout)
+    if result.returncode != 0:
+        print("Evaluation script failed:")
+        print(result.stderr)
+        raise RuntimeError("Evaluation process exited with errors.")
+    
