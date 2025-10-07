@@ -284,7 +284,7 @@ def RepE_evaluation(
             activations_artifact = None
     
     assert activations_artifact, "Failure in activations artifact retrieval"
-    intervention_layers = " ".join(map(str,eval_intervention_layers))
+
     cmd = [
         "python", "patched_unibias/main.py",
         "--dataset_name", eval_dataset_name,
@@ -292,7 +292,7 @@ def RepE_evaluation(
         "--RepE", "true",
         "--resume", eval_resume,
         "--activations", activations_art_name,
-        "--intervention_layers", intervention_layers,
+        "--intervention_layers", eval_intervention_layers,
         "--log_on_WB", "true"
     ]
     print("Launching evaluation command:")
