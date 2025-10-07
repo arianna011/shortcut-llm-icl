@@ -2,7 +2,6 @@ import os
 from patched_unibias import WB_logging as L
 from extract_activations import load_shortcut_prompts as E
 from extract_activations import BaseLLM, HuggingFaceLLM
-from patched_unibias import main
 import random
 import numpy as np
 import wandb
