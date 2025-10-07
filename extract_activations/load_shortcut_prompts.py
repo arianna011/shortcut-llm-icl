@@ -241,7 +241,7 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples:
     selected_rows = []
     count = 0
 
-    if task == Task.NLI:
+    if task in [Task.NLI, Task.BINARY_NLI]:
 
         with tqdm(total=n_samples, desc="Selecting prompts", ncols=100, dynamic_ncols=True) as pbar:
             for i, row in paired_dataset.sample(frac=1, random_state=seed).iterrows():

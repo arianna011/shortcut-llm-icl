@@ -227,5 +227,3 @@ def log_evaluation_run(
 
     wandb.finish()
     print(f"✅ Logged evaluation run: {run_name}")
-
-    
