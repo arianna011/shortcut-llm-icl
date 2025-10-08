@@ -210,10 +210,13 @@ class ClusterMeanRepReader(RepReader):
         for layer in hidden_layers:
             H_train = np.array(hidden_states[layer])
 
-            H_pos_mean = H_train[pos_class].mean(axis=0, keepdims=True)
-            H_neg_mean = H_train[neg_class].mean(axis=0, keepdims=True)
+            H_pos_mean = H_train[pos_class].mean(axis=0)
+            H_neg_mean = H_train[neg_class].mean(axis=0)
 
             directions[layer] = H_pos_mean - H_neg_mean
+        
+        for layer, dir_vec in directions.items():
+            assert dir_vec.ndim == 1, f"Direction for layer {layer} must be 1D, got shape {dir_vec.shape}"
         
         return directions
 
