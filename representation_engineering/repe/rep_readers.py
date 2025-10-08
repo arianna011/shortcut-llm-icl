@@ -12,6 +12,7 @@ def project_onto_direction(H, direction):
     if type(direction) != torch.Tensor:
         H = torch.Tensor(H).cuda()
     if type(direction) != torch.Tensor:
+        direction = np.atleast_1d(direction)
         direction = torch.Tensor(direction)
         direction = direction.to(H.device)
     mag = torch.norm(direction)
