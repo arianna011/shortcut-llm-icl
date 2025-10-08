@@ -298,11 +298,8 @@ def RepE_evaluation(
     print("Launching evaluation command:")
     print(" ".join(cmd))
 
-    result = subprocess.run(cmd, text=True, capture_output=True)
+    result = subprocess.run(cmd, text=True)
 
-    print(result.stdout)
     if result.returncode != 0:
-        print("Evaluation script failed:")
-        print(result.stderr)
         raise RuntimeError("Evaluation process exited with errors.")
     
