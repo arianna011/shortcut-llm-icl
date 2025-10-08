@@ -292,7 +292,7 @@ def RepE_evaluation(
         "--RepE", "true",
         "--resume", eval_resume,
         "--activations", activations_art_name,
-        "--intervention_layers", eval_intervention_layers,
+        "--intervention_layers" ] + list(map(str, eval_intervention_layers)) + [
         "--log_on_WB", "true"
     ]
     print("Launching evaluation command:")
