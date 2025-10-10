@@ -9,6 +9,7 @@ import json
 import subprocess
 import pandas as pd
 import torch
+import sys,subprocess
 from transformers import pipeline
 from representation_engineering import repe_pipeline_registry
 repe_pipeline_registry()
@@ -286,7 +287,7 @@ def RepE_evaluation(
     assert activations_artifact, "Failure in activations artifact retrieval"
 
     cmd = [
-        "python", "-u", "patched_unibias/main.py",
+        "python", "patched_unibias/main.py",
         "--dataset_name", eval_dataset_name,
         "--num_shot", str(eval_num_shot),
         "--RepE", "true",
@@ -298,7 +299,7 @@ def RepE_evaluation(
     print("Launching evaluation command:")
     print(" ".join(cmd))
 
-    result = subprocess.run(cmd, text=True)
+    result = subprocess.run(cmd, text=True, stdout=sys.stdout, stderr=sys.stderr)
 
     if result.returncode != 0:
         raise RuntimeError("Evaluation process exited with errors.")
