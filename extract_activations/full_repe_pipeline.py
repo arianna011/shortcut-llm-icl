@@ -286,7 +286,7 @@ def RepE_evaluation(
     assert activations_artifact, "Failure in activations artifact retrieval"
 
     cmd = [
-        "python", "patched_unibias/main.py",
+        "python", "-u", "patched_unibias/main.py",
         "--dataset_name", eval_dataset_name,
         "--num_shot", str(eval_num_shot),
         "--RepE", "true",
