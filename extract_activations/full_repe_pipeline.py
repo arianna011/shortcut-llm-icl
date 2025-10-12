@@ -299,8 +299,20 @@ def RepE_evaluation(
     print("Launching evaluation command:")
     print(" ".join(cmd))
 
-    result = subprocess.run(cmd, text=True, stdout=sys.stdout, stderr=sys.stderr)
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1  # line-buffered
+    )
 
-    if result.returncode != 0:
-        raise RuntimeError("Evaluation process exited with errors.")
+    # stream output live
+    for line in process.stdout:
+        print(line, end="")
+        sys.stdout.flush()
+
+    process.wait()
+
+    print(f"\nSubprocess finished with exit code {process.returncode}")
     
