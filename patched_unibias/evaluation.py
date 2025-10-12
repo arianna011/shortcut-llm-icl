@@ -11,7 +11,7 @@ import os
 from typing import List,Union
 import gc
 from accelerate.utils import release_memory
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import csv, json
 from representation_engineering import repe_pipeline_registry
 import wandb
