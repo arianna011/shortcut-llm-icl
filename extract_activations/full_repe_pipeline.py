@@ -1,7 +1,8 @@
 import os
 from patched_unibias import WB_logging as L
+from patched_unibias import prepare_dataset_test, task_labels, find_possible_ids_for_labels, ICL_evaluation
 from extract_activations import load_shortcut_prompts as E
-from extract_activations import BaseLLM, HuggingFaceLLM
+from extract_activations import BaseLLM, HuggingFaceLLM, DATASETS_TO_TASKS
 import random
 import numpy as np
 import wandb
@@ -12,6 +13,7 @@ import torch
 import sys,subprocess
 from transformers import pipeline
 from representation_engineering import repe_pipeline_registry
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 repe_pipeline_registry()
 
 
@@ -204,6 +206,79 @@ def _format_data_nli(df, clean_instr, dirty_instr, shuffle):
   return np.concatenate(data).tolist(), labels
 
 
+def unibias_main(model_name: str,
+                 hf_token: str,
+                 eval_dataset_name: str,
+                 num_shot: int,
+                 RepE_enabled: bool,
+                 activations_name: str,
+                 intervention_layers: list[int],
+                 resume: bool = False,
+                 new_tokens: int = 10,
+                 log_on_WB: bool = True):
+    
+    device = torch.device("cuda:0")
+    hf_token = hf_token or os.environ.get("HF_TOKEN")
+
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_use_double_quant=True,         
+        bnb_4bit_quant_type="nf4",                 
+        bnb_4bit_compute_dtype=torch.float16,  
+    )
+
+    model_kwargs = {
+        "torch_dtype": torch.float16 if torch.cuda.is_available() else torch.float32,
+        "low_cpu_mem_usage": True,
+        "device_map": "auto"
+    }
+
+    if hf_token:
+        model_kwargs["token"] = hf_token
+
+    model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, **model_kwargs)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token if hf_token else None)
+    model.eval()
+
+    prompt_list, test_labels, demonstration, test_sentences = prepare_dataset_test(eval_dataset_name, num_shot=num_shot)
+    ans_label_list = task_labels(eval_dataset_name)
+    gt_ans_ids_list = find_possible_ids_for_labels(ans_label_list, tokenizer)
+
+    class_labels = [DATASETS_TO_TASKS[eval_dataset_name].reference_gen_to_labels()[ans[0]] for ans in ans_label_list]
+
+    control_method = None
+    block_name = None
+    if RepE_enabled:
+        assert activations_name and intervention_layers, "Please provide non-empty RepE params"
+        control_method = "reading_vec"
+        block_name = "decoder_block"
+
+    print("Starting evaluation...")
+
+    # evaluate performance
+    final_acc, predictions, all_label_probs, cf = ICL_evaluation(model, tokenizer, device, prompt_list, test_labels, 
+                                                    gt_ans_ids_list, eval_dataset_name, 
+                                                    repE=RepE_enabled, activations_art_name=activations_name,
+                                                    gen_tokens=new_tokens, intervention_layers=intervention_layers,                                           resume=resume)
+
+    if log_on_WB:
+        L.log_evaluation_run( model_name=model_name,
+                            eval_dataset=eval_dataset_name,
+                            ICL_shots=num_shot,
+                            repE_active=RepE_enabled,
+                            predictions=predictions,
+                            gt_labels=test_labels,
+                            all_label_probs=all_label_probs,
+                            class_names=class_labels,
+                            prompt_list=prompt_list,
+                            confusion_matrix=cf,
+                            activations_artifact_name=activations_name,
+                            intervention_layers=intervention_layers,
+                            control_method=control_method,
+                            block_name=block_name
+                           )
+
+
 def RepE_evaluation(
     repo_path: str,
     drive_path: str,
@@ -286,45 +361,14 @@ def RepE_evaluation(
     
     assert activations_artifact, "Failure in activations artifact retrieval"
 
-    cmd = [
-        "python", "patched_unibias/main.py",
-        "--dataset_name", eval_dataset_name,
-        "--num_shot", str(eval_num_shot),
-        "--RepE", "true",
-        "--resume", eval_resume,
-        "--activations", activations_art_name,
-        "--intervention_layers" ] + list(map(str, eval_intervention_layers)) + [
-        "--log_on_WB", "true"
-    ]
-    print("Launching evaluation command:")
-    print(" ".join(cmd))
-
-    process = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1  # line-buffered
-    )
-
-    # stream output live
-    buffer = ""
-    while True:
-        char = process.stdout.read(1)
-        if not char:
-            break
-        # overwrite same line on '\r' to preserve tqdm progress bars
-        if char == "\r":
-            sys.stdout.write("\r" + buffer)
-            sys.stdout.flush()
-            buffer = ""
-        elif char == "\n":
-            print(buffer)
-            buffer = ""
-        else:
-            buffer += char
-
-    process.wait()
-
-    print(f"\nSubprocess finished with exit code {process.returncode}")
+    unibias_main(model_name=model_wrap.model_name,
+                 hf_token=model_wrap.hf_token,
+                 eval_dataset_name=eval_dataset_name,
+                 num_shot=eval_num_shot,
+                 RepE_enabled=True,
+                 resume=eval_resume,
+                 activations_name=activations_art_name,
+                 intervention_layers=eval_intervention_layers,
+                 log_on_WB=True
+                 )
     
