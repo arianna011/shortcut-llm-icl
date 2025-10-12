@@ -194,7 +194,8 @@ def log_evaluation_run(
     else:
         run_name += f'_baseline'
 
-    run = wandb.init(project=WB_PROJECT_NAME, name=run_name, job_type="evaluation", config=config, tags=tags or [])
+    run = wandb.init(project=WB_PROJECT_NAME, name=run_name, job_type="evaluation", config=config, tags=tags or [], 
+                     settings = wandb.Settings(init_timeout=240))
 
     if repE_active:
         # link activations artifact as input
