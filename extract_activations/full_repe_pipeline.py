@@ -308,9 +308,21 @@ def RepE_evaluation(
     )
 
     # stream output live
-    for line in process.stdout:
-        print(line, end="")
-        sys.stdout.flush()
+    buffer = ""
+    while True:
+        char = process.stdout.read(1)
+        if not char:
+            break
+        # overwrite same line on '\r' to preserve tqdm progress bars
+        if char == "\r":
+            sys.stdout.write("\r" + buffer)
+            sys.stdout.flush()
+            buffer = ""
+        elif char == "\n":
+            print(buffer)
+            buffer = ""
+        else:
+            buffer += char
 
     process.wait()
 
