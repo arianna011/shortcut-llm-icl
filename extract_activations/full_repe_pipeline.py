@@ -298,11 +298,11 @@ def RepE_evaluation(
     eval_dataset_name: str,
     eval_num_shot: int,
     eval_intervention_layers: list[int],
-    eval_resume: str,
     training_dataset_num_shot: int = 0,
     training_max_ans_tokens: int = 5,
     training_logits_step: int = 0,
     training_model_temperature: float = 0.0,
+    eval_resume: bool = False,
     training_batch_size: int = 32,
     training_debug: bool = False):
 
