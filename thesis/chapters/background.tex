@@ -99,21 +99,26 @@ Such phenomena illustrate how models may confuse correlation (the circumstantial
 
 
 \subsection{Definition}
-The term "\textit{shortcut learning}" refers to the tendency of ML models to rely on non-robust decision rules (shortcuts), which allow them to perform well on test sets with the same distribution of training data but reveal their weakness under out-of-distribution testing or adversarial attacks.\\
+The term "\textit{shortcut learning}" refers to the tendency of ML models to rely on non-robust decision rules (shortcuts), that allow them to perform well on test sets with the same distribution of training data but reveal their weakness under Out-Of-Distribution (OOD) testing or adversarial attacks.\\
 
-Shortcut learning behaviors have also been observed in biological systems. Animals can find unexpected simple solutions to experimental tasks designed to study specific cognitive abilities (\textit{unintended cue learning}), while human students may adopt superificial learning strategies based on rote memorization, which yield good performance on multiple-choice exams but don't provide transferable understanding (\textit{surface learning}) \citep{Geirhos_2020}.
-One of the earliest and most famous examples of shortcut learning was the case of Clever Hans, a horse living in the early 20th century that appeared capable of performing arithmetic operations and other intellectual tasks but was in fact responding to involuntary body cues from its human trainer (\textit{Clever Hans effect}) \citep{cleverhans}.
+Shortcut learning behaviors have also been observed in biological systems. Animals can find unexpected simple solutions to experimental tasks designed to study specific cognitive abilities (\textit{unintended cue learning}), while human students may adopt superificial learning strategies based on rote memorization, achieving good scores without developing transferable understanding (\textit{surface learning}) \citep{Geirhos_2020}.
+One of the earliest and most famous examples of shortcut learning was the case of Clever Hans, a horse living in the early 20th century that appeared capable of performing arithmetic operations and other intellectual tasks but was in fact responding to involuntary body cues from its human trainer (\textit{Clever Hans effect}) \citep{cleverhans}.\\
 
-In general, shortcuts represent a comfortable deviation from the intended solution to a given problem.
+In general, shortcuts represent an appealing yet deceptive deviation from the intended solution to a given problem. Since most real-world problems are too complex to be explicitely formalized, ML models are designed to autonomously approximate their solutions from examples. However, when learning a predictive function 
+\begin{equation*}
+f_{pred}: F_{input} \to Y
+\end{equation*} 
 
-The same behavior has been referred to in several ways in literature: as 
+that maps input data features $F_{input}$ to task labels $Y$, an ML model could assign importance to different features from those a human would intuitively consider as relevant for the same task. In particular, the model might attribute a high weight to a feature $f_i \in F_{input}$ that exhibits a strong correlation $c(f_i, y_j)$ with a label $y_j \in Y$, even if there is no causal relation between them. Such correlations are called "spurious" and can be either \textit{world-induced}, when arising from the ground truth data distribution $P_{gt}(x)$ (e.g. cows statistically appear more often on grass than on sand) or \textit{sampling-induced}, when resulting from selection biases in the training dataset $\{x_i\}_{i=1}^N$ drawn from the observed distribution $P(x)$, which inevitably deviates from the true one \citep{steinmann2024navigatingshortcutsspuriouscorrelations}. \\
 
-% other names for shortcut learning (various bias)
-In the literature, it has been described in several ways: as \textit{learning under covariate shift}, which emphasizes referring to the tendency of deep architectures to fit data with the simplest functions to learn ; as the\textit{ Clever Hans effect}, after the horse that seemed capable of arithmetic and other mental tasks but was in fact responding to unintentional body cues from its trainer; and, most prominently today, \textit{shortcut learning}
+When an ML model relies on such spurious correlations for its predictions instead of capturing more complex input-label relationsihps, it effectively learns to take a "shortcut". This leads it to generalize unpredictably on OOD data, often revealing a mismatch between the ground-truth function $f_{gt}$ and its learnt approximation $f_{pred}$. In the object classification example, an ML model might fail at recognizing objects under seemingly innocuous distribution shifts, such as changes in rotation or illumination, while simultaneously detecting specific object classes in images where humans would not perceive them at all (Figure \ref{fig:gen}).\\
 
-
-% unintended generalization
-% formalizzazione shortcut
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\linewidth]{assets/generalization.png}
+    \caption{A generic Deep Neural Network (DNN) trained to recognize objects from images may fail to detect classes such as "cow" in visual contexts not observed during training, or, conversely, rely on irrelevant features to predict their presence in images where the object is absent}
+    \label{fig:gen}
+\end{figure}
 
 \subsection{Causes}
 
@@ -121,7 +126,7 @@ In the literature, it has been described in several ways: as \textit{learning un
 % simplicity bias
 % biases in Navigating Shortcuts, Spurious Correlations, and Confounders:From Origins via Detection to Mitigation
 
-\subsection{Shortcut types}
+\subsection{Shortcut types in ICL}
 
 \subsection{Detection and mitigation}
 
