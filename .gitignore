@@ -1,2 +1,21 @@
-__pycache__/
 results_tmp*/
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.lol
+*.pdf
+# VS Code
+.vscode/
+# Python artifacts
+__pycache__/
+*.pyc
+.ipynb_checkpoints/

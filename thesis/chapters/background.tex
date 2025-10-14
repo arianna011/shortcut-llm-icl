@@ -1,0 +1,121 @@
+\documentclass[../main.tex]{subfiles}
+% !TeX root = ../main.tex
+\graphicspath{{\subfix{../assets/}}}
+\begin{document}
+
+\chapter{Background}
+
+\section{In-Context Learning }
+Large Language Models (LLMs) are the most successful class of AI systems currently employed in Natural Language Processing (NLP). They serve as modern assistants across several applications, ranging from open-domain conversation and question answering to machine translation and code generation. Their rapid progress has been largely driven by scaling: architectures with increasing depth and width, trained on massive and diverse web-scale corpora, have not yet shown signs of performance saturation. In fact, they follow empirical scaling laws that predict consistent improvements with greater model size, data, and compute \citep{kaplan2020scalinglawsneurallanguage}. The main limitation to further progress is therefore not intrinsic model capability, but rather the economic and environmental costs of training ever-larger architectures on ever-broader datasets. 
+\\
+
+% ICL
+An interesting consequence of such large-scale pretraining was the emergence of the In-Context Learning (ICL) paradigm \citep{brown2020languagemodelsfewshotlearners}. LLMs demonstrated the surprising ability to perform novel tasks after being provided only a few input-output demonstrations, presumably inferring the underlying semantic pattern in a similar way to how humans would solve new problems after looking at some examples. LLMs such as GPT-3 \citep{brown2020languagemodelsfewshotlearners}, Llama and OPT \citep{milios2023incontextlearningtextclassification} are able to achieve state-of-the-art performance on several NLP benchmarks when evaluated in ICL settings, even competing with finetuned task-specific models.
+
+\subsection{Definition}
+
+An LLM models a probability distribution $p_\theta(w_t|w_{<t})$ over the text tokens $w_i$ in its vocabulary $V$ in order to build coherent natural language sequences $"w_1w_2...w_tw_{t+1}..."$. In transformer-based architectures \citep{vaswani2023attentionneed}, the parameters $\theta$ learned for attention and feed-forward units ultimately determine the likelihood of each token being the next word in the sequence, conditioned on all preceding ones (\textit{autoregression}). A decoding strategy, either deterministic (e.g. greedy choice) or stochastic (e.g. temperature-based sampling), is then applied to effectively select a new token and continue the text generation process.\\
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{assets/bigger_ICL.png}
+    \caption{Representation of the In-Context Learning (ICL) paradigm for LLMs}
+    \label{fig:icl}
+\end{figure}
+
+In an ICL setting (Figure \ref{fig:icl}), given an NLP task defining an input-label relationship function $f: V^* \to Y$ (where $V^*$ denotes the space of all possible text sequences and $Y = \{y_1,...,y_m\}$ is the set of valid answers or labels required by the task), an arbitrary number $k$ of example pairs $D = \{(x_i, f(x_i))\}_{i=1}^k$ can be selected from a dataset to serve as task demonstrations for an LLM that has not been explicitly trained to perform that task. 
+
+The actual prompt that is presented to the LLM is obtained by populating a chosen prompt template $P(I,D,Q)$, which specifies how to format the optional task instruction $I$ (written in natural language), the demonstrations set $D$ and the query $Q = x_q$, which represents the the task instance for which the LLM is required to produce an answer $y_q^{pred}$.
+
+
+Without any parameters update, the frozen LLM leverages its vast and generalizable prior knowledge to try to infer the hidden function $f$ from the demonstrations.
+The predicted answer is computed as:
+\[
+y_{q}^{pred} = \arg\max_{y\in Y} \; p_{\theta}(y \mid P(I, D,Q))
+\]
+
+When the number of demonstrations is $k = 0$, the model operates in a \textit{zero-shot} setting, relying solely on the task instruction. For $k > 0$, the typical \textit{few-shot} setting is established, where contextual examples guide the model's predictions.
+
+\subsection{Influencing factors \label{sec:ICL_factors}}
+
+Several studies have analyzed the empirical factors that can influence LLM performance in ICL settings \citep{dong2024surveyincontextlearning}. \\
+
+At the pretraining stage, the diversity of source domains within the training corpora has been shown to significantly affect the ability of LLMs to generalize to unseen tasks in ICL, often even more than the overall corpus size. While pretraining on a dataset specifically related to a downstream task seems to help zero-shot learning performance, it does not always guarantee competitive few-shot results on the same task. Moreover, ICL capabilities can emerge when a model is trained on a combination of multiple corpora, even if each corpus individually does not promote ICL by itself \citep{shin-etal-2022-effect}. Beyond data quality and diversity, both the model architecture and the training process can influence ICL performance: a larger number of parameters or training steps tends to correlate with stronger in-context learning abilities \citep{wei2022emergentabilitieslargelanguage}.\\
+
+At inference time, LLMs proved to be very sensitive to several features of the ICL prompt itself. First, the selection of the demonstration examples predictably influences ICL performance. Demonstrations drawn from out-of-distribution (OOD) data with respect to the pretraining corpus generally yield lower results \citep{min2022rethinkingroledemonstrationsmakes}. Also, better performance is typically achieved when demonstrations have embeddings that are semantically closer to that of the query \citep{liu2021makesgoodincontextexamples}. Factors such as the format used to present demonstrations, the coverage of the label distribution and the order in which examples are arranged can all affect model predictions. For instance,  \citep{lu2022fantasticallyorderedpromptsthem} observed that certain permutations of examples lead to substantially higher performance than others, but found no consistent pattern among effective orderings, nor any transferability across different model sizes or tasks.
+
+Such feature sensitivities, which can be interpreted as a form of inductive bias \citep{si2023measuringinductivebiasesincontext}, reduce the interpretability of ICL mechanisms and will be further discussed in Section \ref{}.
+
+\subsection{Theoretical explanations}
+To date, it is still not entirely clear why and how ICL works. Some argue that, during pretraining, an LLM is exposed to implicit task demonstrations that can later be triggered and reused in an ICL setting, while others suggest that LLMs are capable of learning new input–label mappings directly from the contextual examples. In \citep{pan2023incontextlearninglearnsincontext}, the authors propose to decouple ICL into Task Recognition (TR) and Task Learning (TL). The former refers to recognizing a previously encountered task from demonstrations and applying relevant pretraining priors; thus, it does not even require a correct association between text and label in the examples. The latter, instead, involves genuinely learning a new input–label mapping from the provided demonstrations and therefore relies on accurate ground-truth labels. The study shows that, while TR emerges as a broad capability across model scales, TL is enabled when increasing both the number of model parameters and the number of in-context examples, making larger models substantially more capable.\\
+
+When adopting a Bayesian framework, ICL can be interpreted as a Bayesian inference process implemented in the forward pass of the LLM transformer:
+\[
+p_{\theta}(y \mid D, x) = \int p(y \mid x, \phi
+) \ p_\theta(\phi \mid D) \ d\phi\]
+
+Given the set of contextual demonstrations $D = \{(x_i,f(x_i))\}_{i=1}^k$ and the query input $x$, the model's output distribution is obtained by integrating the conditional likelihoods $p(y \mid x, \phi)$ of possible answers $y$ under a latent task hypothesis $\phi$, weighted by their posterior probabilities $p_\theta(\phi \mid D)$. This formulation can be interpreted as a form of Bayesian Model Averaging (BMA) \citep{zhang2023doesincontextlearninglearn}. 
+In this view, the LLM implicitly maintains a distribution over possible task hypotheses $\phi$ inferred from the in-context examples $D$, represented by $p_{\theta}(\phi \mid D)$, which is encoded within its hidden representations rather than explicitly computed. Hence, the LLM acts as a \textit{metalearner} (a model that learns to learn through its internal representations) by inferring a posterior over latent task hypotheses and averaging their corresponding predictions to generate an answer.\\
+
+Other interpretations draw parallels between ICL and gradient-based optimizations, suggesting that LLMs may be encoding smaller models in their activations and updating such implicit models as new examples appear in the ICL context.
+\citep{vonoswald2023transformerslearnincontextgradient} demonstrate that a single attention layer can emulate a gradient descent update on a simple regression loss, and that deeper transformers effectively perform multiple such updates across layers, behaving as implicit optimizers. 
+Similarly, \citet{akyürek2023learningalgorithmincontextlearning} show that transformers can instantiate classical algorithms, such as gradient descent, ridge regression, or closed-form least squares, by encoding model parameters within hidden representations and updating them dynamically as new examples are processed. 
+
+\subsection{Advantages and limitations}
+Beyond emulating the human ability to learn from examples, ICL provides an interpretable interface to LLMs, as both instructions and demonstrations are expressed in natural language. It also requires significantly lower computational costs compared to supervised learning, since it does not involve parameter optimizations but only leverages LLMs prior knowledge to generalize to new task patterns. While ICL alone can achieve strong performance, it can be further enhanced through specialized training strategies or pre-inference warm-up to adjust model activations. \\
+
+These advantages have encouraged the application of ICL not only to traditional NLP tasks but also to areas such as Data Engineering, where it can generate annotated data with far less human effort, retrieval-based Model Augmentation and Knowledge Updating, by providing information to an LLM through the in-context prompt \citep{dong2024surveyincontextlearning}. 
+\\
+
+On the downside, as mentioned in Section \ref{sec:ICL_factors}, the performance of ICL is highly sensitive to multiple prompt-related factors, such as example order and formatting, which can reduce its effectiveness and demand careful prompt engineering. Moreover, the underlying mechanisms of ICL remain only partially understood and require further investigation to be fully exploited. Such limited interpretability and sensitivity raise the question of whether LLMs truly learn task semantics in-context or merely rely on spurious cues and surface patterns to make their predictions, a behavior known as \textit{shortcut learning}, which finds particularly fertile ground in ICL settings.
+
+\section{Shortcut Learning }
+Machine Learning (ML) models have shown impressive results across a wide range of domains, from natural language processing to computer vision and multimodal applications. However, when faced with a distributional shift between training datasets and real-world data, these models still often fail to generalize reliably. Instead of learning a robust causal relation between input features and task outputs, they frequently exploit simple spurious correlations embedded in the training set to make their predictions, which can result in unintuitive failures on out-of-distribution examples.\\
+
+
+\begin{figure}[h]
+    \centering
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=1.1\linewidth]{assets/[cow].png}
+        \caption{Example of a CNN leveraging a dataset bias as a shortcut: since cows only appear on grassy backgrounds in the training data, the model learns to predict "[COW]" when it recognizes large green areas in the image and is not able to recognize the animal in a different setting}
+        \label{fig:cow}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{assets/LLM shortcut.png}
+        \caption{Example of an LLM learning a shortcut behavior for the Argument Reasoning Comprehension Task (ARCT)}
+        \label{fig:reasoning}
+    \end{minipage}
+    %\caption{Two images side by side.}
+    \label{fig:two_side}
+\end{figure}
+
+For instance, Convolutional Neural Networks (CNNs) have shown a tendency to classify objects based on the background they mostly appear on in training data rather than on their actual characterizing features (Figure \ref{fig:cow}) \citep{beery2018recognitionterraincognita}. A critical real-world example was represented by a classifier trained to detect pneumonia from images of chest X-ray scans which achieved high accuracy by exploiting hospital-specific watermarks, effectively ignoring the actual pathological signals in the images  \citep{Zech2018VariableGP}. In general, ML models could leverage any superficial feature observed during training (\textit{dataset bias}) to make predictions: object textures or even imperceptible high-frequency patterns can become unintended label predictors. Such behavior is not confined to computer vision. Large Language Models (LLMs) have been shown to rely on spurious cues (e.g. occurrence of high-frequency words such as “not”) to perform tasks, rather than genuinely understanding semantic relationships. In the Argument Reasoning Comprehension Task (ARCT), for instance, BERT selected the correct answer primarily by exploiting such lexical shortcuts (Figure \ref{fig:reasoning}) \citep{niven-kao-2019-probing}. Similarly, in Agent-based Reinforcement Learning, models can reach high scores without learning the intended behavior, by "hacking" the reward function. An example can be found in the algorithm that learned to pause Tetris indefinitely to avoid losing, without even playing the game \citep{Murphy2013TheFL}. 
+
+Such phenomena illustrate how models may confuse correlation (the circumstantial occurrence of some features within specific data categories) with causation (the underlying real-world attributes that truly define entities), achieving high apparent performance while lacking genuine understanding. They represent a major vulnerability of ML models, as they undermine both robustness and interpretability. Moreover, they raise significant societal concerns: decision-making system, such as Amazon’s hiring tool, can base their predictions on sensitive attributes like race or gender, thus perpetuating or even amplifying existing social biases and resulting in unfair outcomes \citep{zhao2017menlikeshoppingreducing}. 
+
+
+\subsection{Definition}
+% other names for shortcut learning (various bias)
+In the literature, it has been described in several ways: as \textit{simplicity bias}, referring to the tendency of deep architectures to fit data with the simplest functions to learn ; as the\textit{ Clever Hans effect}, after the horse that seemed capable of arithmetic and other mental tasks but was in fact responding to unintentional body cues from its trainer; and, most prominently today, \textit{shortcut learning}
+
+% similitudini nei sistemi biologici
+% unintended generalization
+% formalizzazione shortcut
+
+\subsection{Causes}
+
+% inductive bias
+% simplicity bias
+% biases in Navigating Shortcuts, Spurious Correlations, and Confounders:From Origins via Detection to Mitigation
+
+\subsection{Shortcut types}
+
+\subsection{Detection and mitigation}
+
+% shortcut learning in ICL?
+
+
+\end{document}

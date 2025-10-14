@@ -1,0 +1,122 @@
+
+
+
+% !TeX encoding = UTF-8
+% !TeX program = pdflatex
+% !TeX spellcheck = en_US
+
+\documentclass[noexaminfo]{sapthesis}
+\usepackage[autostyle]{csquotes}
+\MakeOuterQuote{"}
+\usepackage[english]{babel}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[linktocpage,pdfusetitle,colorlinks=true,linkcolor=BrickRed,citecolor=BrickRed,urlcolor=BrickRed]{hyperref}
+\usepackage{amssymb}
+\usepackage{overpic}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{nicematrix,tikz}  % For vertical dotted lines in tables (NiceTabular environment)
+\usepackage{arydshln}  % For horizontal dotted lines in tables (\hdottedlines)
+\setlength\dashlinedash{0.2pt}
+\setlength\dashlinegap{1.5pt}
+\setlength\arrayrulewidth{0.3pt}
+
+\usepackage{subcaption,graphicx}
+\graphicspath{{assets/}}
+
+\setcounter{tocdepth}{2}  % Table of Contents includes up to \section
+\usepackage{multirow}
+
+\renewcommand{\arraystretch}{1.3}   % Increase table rows height
+
+\usepackage{natbib}
+\usepackage{cleveref}
+
+%% Add icons to make (1) points
+\usepackage{pifont}
+\newcommand{\pointbone}{\ding{202}~}%
+\newcommand{\pointbtwo}{\ding{203}~}%
+\newcommand{\pointbthree}{\ding{204}~}%
+
+\newcommand{\tickrule}{%
+\midrule[1.5pt]%
+}
+
+
+% Fix bibliography in subfiles: https://tex.stackexchange.com/a/284908
+\def\mainbib{%
+\bibliographystyle{plainnat}%
+\bibliography{bibliography}%
+}
+\def\subbib{\mainbib}
+
+%% Do not display floats in a different section they are declared
+\usepackage{placeins}
+\let\oldsection\section
+\renewcommand{\section}{\FloatBarrier\oldsection}
+
+\usepackage{subfiles} % Best loaded last in the preamble
+
+\title{Shortcut detection and mitigation via Representation Engineering}
+\author{Arianna Paolini}
+
+\IDnumber{1943164}
+\course{Master's Degree in Computer Science [LM-18]}
+\courseorganizer{Faculty of Information Engineering, Informatics, and Statistics}
+
+\AcademicYear{2024/2025}
+
+\advisor{Prof. Indro Spinelli}
+
+\authoremail{paolini.1943164@studenti.uniroma1.it}
+\copyyear{2025}
+\thesistype{Master Degree thesis}
+
+
+\newcommand{\bw}{\mathbf{W}}
+\newcommand{\be}{\mathbf{e}}
+\newcommand{\loss}{\mathcal{L}}
+\newcommand{\Loss}{\loss}
+\newcommand{\bxa}{\mathbf{x}^{\star}}
+\newcommand{\bya}{\mathbf{y}^{\star}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\by}{\mathbf{y}}
+\newcommand{\bX}{\mathbf{X}}
+\newcommand{\bg}{\mathbf{g}}
+\newcommand{\bz}{\mathbf{z}}
+
+
+\begin{document}
+
+\def\subbib{}  %% Fix from https://tex.stackexchange.com/a/284908
+
+\hypersetup{
+    pdfcreator={LaTeX},
+    pdfsubject={Master's Degree Thesis},
+    pdfkeywords={LLM,Artificial Intelligence,Shortcut Learning},
+}
+\versiondate{\today}
+
+\frontmatter
+\maketitle
+
+% \dedication{Dedicated to}         %% TODO
+
+\subfile{chapters/abstract}
+
+\tableofcontents
+\addcontentsline{toc}{chapter}{Introduction}
+\mainmatter
+
+\subfile{chapters/introduction}
+\subfile{chapters/background}
+
+
+\backmatter
+\cleardoublepage
+\phantomsection % Give this command only if hyperref is loaded
+\addcontentsline{toc}{chapter}{\bibname}
+
+\mainbib{}
+\end{document}
