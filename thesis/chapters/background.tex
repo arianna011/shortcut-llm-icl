@@ -121,10 +121,11 @@ When an ML model relies on such spurious correlations for its predictions instea
 \end{figure}
 
 \subsection{Causes}
+One of the principal reasons for shorcut learning is the \textit{simplicity bias} of ML models: they tend to fit data with simplest available function, aiming to achieve the best performance with the least effort \citep{vallepérez2019deeplearninggeneralizesparameterfunction}. While this often helps prevent overfitting on training datasets, it can also lead to overlook more informative yet complex data patterns.\\
 
-% inductive bias
-% simplicity bias
-% biases in Navigating Shortcuts, Spurious Correlations, and Confounders:From Origins via Detection to Mitigation
+In practice, the causes of shorcut learning can be found both within ML models and in the data they are fed. The set of solutions learnable by a model is determined by its \textit{inductive bias}, which represents its intrinsic prior assumptions and influences the type of function it will prefer to learn given finite capacity. The inductive bias is, in turn, determined by multilple components: the model's architecture (e.g. convolutions promot feature detection robust to spatial location within an image), the loss function formalizing the learning objective (e.g. cross-entropy without regularization may encourage reliance on a few shortcut features), the optimization process (e.g. sthocastic gradient descent is inherently susceptible to simplicity bias, especially with high learning rates) and the training data itself, which can be imbalanced or contain annotation artifacts \citep{Geirhos_2020}. Moreover, shortcut features often exhibit less noise than the truly relevant ones within the training distribution, making them appear more predictive for the target task.\\
+
+In the case of LLMs, both the pretraining and finetuning data play a critical in the emergence of shortcut learning. For instance, LLMs have been shown to produce predictions biased towards high-frequency and frequently co-occurring words observed during training. Somewhat counterintuitively, increasing model size does not mitigate shorcut learning: larger LLMs are more prone to exploiting shortcuts, likely because their increased capacity allows them to memorize a broader range of spurious cues \citep{song2024shortcutlearningincontextlearning}. Conversely, longer fine-tuning may promote better generalization, since shortcuts are often learned during the early steps of training \citep{du2023shortcutlearninglargelanguage}.
 
 \subsection{Shortcut types in ICL}
 
