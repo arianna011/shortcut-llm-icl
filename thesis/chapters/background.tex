@@ -44,7 +44,7 @@ At the pretraining stage, the diversity of source domains within the training co
 
 At inference time, LLMs proved to be very sensitive to several features of the ICL prompt itself. First, the selection of the demonstration examples predictably influences ICL performance. Demonstrations drawn from out-of-distribution (OOD) data with respect to the pretraining corpus generally yield lower results \citep{min2022rethinkingroledemonstrationsmakes}. Also, better performance is typically achieved when demonstrations have embeddings that are semantically closer to that of the query \citep{liu2021makesgoodincontextexamples}. Factors such as the format used to present demonstrations, the coverage of the label distribution and the order in which examples are arranged can all affect model predictions. For instance,  \citep{lu2022fantasticallyorderedpromptsthem} observed that certain permutations of examples lead to substantially higher performance than others, but found no consistent pattern among effective orderings, nor any transferability across different model sizes or tasks.
 
-Such feature sensitivities, which can be interpreted as a form of inductive bias \citep{si2023measuringinductivebiasesincontext}, reduce the interpretability of ICL mechanisms and will be further discussed in Section \ref{}.
+Such feature sensitivities, which can be interpreted as a form of inductive bias \citep{si2023measuringinductivebiasesincontext}, reduce the interpretability of ICL mechanisms and will be further discussed in Section \ref{sec:types_icl}.
 
 \subsection{Theoretical explanations}
 To date, it is still not entirely clear why and how ICL works. Some argue that, during pretraining, an LLM is exposed to implicit task demonstrations that can later be triggered and reused in an ICL setting, while others suggest that LLMs are capable of learning new input–label mappings directly from the contextual examples. In \citep{pan2023incontextlearninglearnsincontext}, the authors propose to decouple ICL into Task Recognition (TR) and Task Learning (TL). The former refers to recognizing a previously encountered task from demonstrations and applying relevant pretraining priors; thus, it does not even require a correct association between text and label in the examples. The latter, instead, involves genuinely learning a new input–label mapping from the provided demonstrations and therefore relies on accurate ground-truth labels. The study shows that, while TR emerges as a broad capability across model scales, TL is enabled when increasing both the number of model parameters and the number of in-context examples, making larger models substantially more capable.\\
@@ -128,10 +128,40 @@ In practice, the causes of shorcut learning can be found both within ML models a
 In the case of LLMs, both the pretraining and finetuning data play a critical in the emergence of shortcut learning. For instance, LLMs have been shown to produce predictions biased towards high-frequency and frequently co-occurring words observed during training. Somewhat counterintuitively, increasing model size does not mitigate shorcut learning: larger LLMs are more prone to exploiting shortcuts, likely because their increased capacity allows them to memorize a broader range of spurious cues \citep{song2024shortcutlearningincontextlearning}. Conversely, longer fine-tuning may promote better generalization, since shortcuts are often learned during the early steps of training \citep{du2023shortcutlearninglargelanguage}.
 
 \subsection{Shortcut types in ICL}
+\label{sec:types_icl}
+
+This work focuses on shortcut learning in natural language processing (NLP) tasks within in-context-learning (ICL) settings, where LLMs are likely to rely on both \textit{instinctive} shorcuts, which represent inherent model preferences absorbed during pretraining, and \textit{acquired} shortcuts, which emerge from the specific prompt demonstrations \citep{song2024shortcutlearningincontextlearning}.\\
+
+Instinctive shortcuts can be categorized as follows:
+\begin{itemize}
+    \item \textit{Vanilla-label bias}: the model exhibits a preference for labels corresponding to high-frequency words in the training corpus;
+    \item \textit{Context-label bias}: the model’s predictions are influenced by prompt formatting, including the punctuation used in the instruction and the ordering of demonstrations;
+    \item \textit{Domain-label bias}: the model relies on semantic prior knowledge related to the task, showing a bias toward in-domain terms when selecting labels;
+    \item \textit{Reasoning-label bias}: the model tends to avoid reasoning over underlying causal relations in Question Answering or other tasks requiring multiple logical steps, instead deriving superficial answers directly from the examples.\\
+\end{itemize}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{assets/Shortcut Types.png}
+    \caption{Classification of LLM shortcuts in the In-Context Learning (ICL) paradigm}
+    \label{fig:types}
+\end{figure}
+
+Acquired shortcuts, in contrast, can be grouped as:
+\begin{itemize}
+    \item \textit{Lexicon}: reliance on correlations between lexical features in the contextual examples and specific labels (e.g. negation words often associated with the label contradiction in Natural Language Inference tasks);
+    \item \textit{Concept}: internalization of disproportionate co-occurrences between specific concepts and labels (e.g. plants more frequently associated with positive sentiment due to their prevalence in positive examples);
+    \item \textit{Overlap}: dependence on overlapping text between task branches (e.g. predicting entailment in NLI when sentences are repeated between premise and hypothesis);
+    \item \textit{Position}: reliance on positional information as a cue for prediction (e.g. options ranked first or last in Multiple-Choice Question Answering are more likely to be chosen);
+    \item \textit{Text Style}: association of stylistic cues (e.g. Shakespearean or biblical language) with specific labels;
+    \item \textit{Group Dynamics}: influence of relative frequency or co-occurrence patterns among options in multi-choice settings (e.g. if answer "A" appears more often in demonstrations, the model becomes more likely to select "A" than "B").\\
+\end{itemize}
+
+Although instinctive and acquired shortcuts arise from different sources, they often interact, as pre-existing tendencies can amplify the impact of spurious cues in demonstrations. The present study represent an attempt to mitigate the effect of acquired shortcuts, since these are directly influenced by prompt design and can thus be more effectively controlled at inference time.
 
 \subsection{Detection and mitigation}
-
-% shortcut learning in ICL?
+% detection -> performance degradation and explainability analysis
+% mitigation -> different approaches but not specific works
 
 
 \end{document}
