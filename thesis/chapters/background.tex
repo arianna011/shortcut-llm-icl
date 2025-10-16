@@ -18,7 +18,7 @@ An LLM models a probability distribution $p_\theta(w_t|w_{<t})$ over the text to
 
 \begin{figure}
     \centering
-    \includegraphics[width=1\linewidth]{assets/bigger_ICL.png}
+    \includegraphics[width=1\linewidth]{assets/ICL_new_no_title.png}
     \caption{Representation of the In-Context Learning (ICL) paradigm for LLMs}
     \label{fig:icl}
 \end{figure}
@@ -171,8 +171,8 @@ Existing works on shortcut learning mitigation can be categorized into \textit{d
 
 Data-centric approaches focuse on refining the data on which LLMs are trained in order to minimize opportunities for shortcut exploitation. This can involve filtering out samples with high co-occurrence probabilities, instructing crowd workers to avoid annotation artifacts, or generating new high-quality synthethic data. Data augmentation techniques may also help reduce reliance on shortcuts. However, such approaches can only mitigate a limited subset of biases that are humanly recognizable. Other data-centric strategies include reweighting training samples to assign greater importance to hard examples where the model show low confidence, thereby improving robustness \citep{utama-etal-2020-towards}, or partitioning the dataset into multiple non-IID subsets (called "training environments"), each containing different spurious correlations, and then maximizing the similarity between gradients across environments, as reliable features tend to be shared among them \citep{shi2021gradientmatchingdomaingeneralization}. Despite their effectiveness, data-centric approaches require retraining or fine-tuning the LLM, which is computationally expensive and may inadvertently alter internal knowledge representations, potentially leading to catastrophic forgetting of useful information \citep{li2024examiningforgettingcontinualpretraining}.\\
 
+% model centric approaches -> training LLM vs frozen LLM
 
-% mitigation -> different approaches but not specific works
 % immagine classificazione approcci detection e mitigation
 
 \end{document}
