@@ -142,8 +142,8 @@ Instinctive shortcuts can be categorized as follows:
 
 \begin{figure}
     \centering
-    \includegraphics[width=1.0\linewidth]{assets/Shortcut Types.png}
-    \caption{Classification of LLM shortcuts in the In-Context Learning (ICL) paradigm}
+    \includegraphics[width=0.9\linewidth]{assets/Shortcut Types.png}
+    \caption{Classification of LLM shortcuts in the In-Context Learning (ICL) paradigm as presented in \citep{song2024shortcutlearningincontextlearning}}
     \label{fig:types}
 \end{figure}
 
@@ -160,8 +160,19 @@ Acquired shortcuts, in contrast, can be grouped as:
 Although instinctive and acquired shortcuts arise from different sources, they often interact, as pre-existing tendencies can amplify the impact of spurious cues in demonstrations. The present study represent an attempt to mitigate the effect of acquired shortcuts, since these are directly influenced by prompt design and can thus be more effectively controlled at inference time.
 
 \subsection{Detection and mitigation}
-% detection -> performance degradation and explainability analysis
-% mitigation -> different approaches but not specific works
 
+Several lines of research have been proposed in literature to detect the presence of shorcut learning and to mitigate its effects.\\
+
+A straightforward strategy to reveal non-robust decision rules leveraged by LLMs is to evaluate them on OOD test sets using standard NLP metrics (e.g. accuracy, F1 score), which typycally exposes a significant performance degradation \citep{yang2023gluexevaluatingnaturallanguage}. The traditional IID train-test split, in fact, encodes similar biases in both sets and can therefore lead to misleading conclusions about model generalization. 
+Adversarial attacks, such as those measuring the sensitivity of LLMs to small input perturbations \citep{jin2020bertreallyrobuststrong}, also provide an effective means to detect potential shortcuts. Morevoer, randomization ablation methods can assess whether an LLM truly exploits essential linguistic information in the input (e.g. word order or syntax) or instead ignores it while maintaining high performance due to spurious cues \citep{pham2021orderimportantsequentialorder}. 
+Another active line of research relies on explainability techniques, such as feature attribution (e.g. Integrated Gradients) or istance attribution methods \citep{han2020explainingblackboxpredictions}, to identify reliance on artifacts present in the data. It has been shown, for instance, that in Natural Language Understanding (NLU) task, models often concentrate their attention on a few tokens belonging to the head of the so-called "long tailed distribution" of words in the training corpus \citep{du2021interpretingmitigatingshortcutlearning}.\\
+
+Existing works on shortcut learning mitigation can be categorized into \textit{data-centric}, \textit{model-centric} and, in the case of ICL settings, \textit{prompt-centric} approaches.\\
+
+Data-centric approaches focuse on refining the data on which LLMs are trained in order to minimize opportunities for shortcut exploitation. This can involve filtering out samples with high co-occurrence probabilities, instructing crowd workers to avoid annotation artifacts, or generating new high-quality synthethic data. Data augmentation techniques may also help reduce reliance on shortcuts. However, such approaches can only mitigate a limited subset of biases that are humanly recognizable. Other data-centric strategies include reweighting training samples to assign greater importance to hard examples where the model show low confidence, thereby improving robustness \citep{utama-etal-2020-towards}, or partitioning the dataset into multiple non-IID subsets (called "training environments"), each containing different spurious correlations, and then maximizing the similarity between gradients across environments, as reliable features tend to be shared among them \citep{shi2021gradientmatchingdomaingeneralization}. Despite their effectiveness, data-centric approaches require retraining or fine-tuning the LLM, which is computationally expensive and may inadvertently alter internal knowledge representations, potentially leading to catastrophic forgetting of useful information \citep{li2024examiningforgettingcontinualpretraining}.\\
+
+
+% mitigation -> different approaches but not specific works
+% immagine classificazione approcci detection e mitigation
 
 \end{document}
