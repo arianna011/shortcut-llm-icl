@@ -220,6 +220,48 @@ class ClusterMeanRepReader(RepReader):
         
         return directions
 
+    def get_signs(self, hidden_states, train_choices, hidden_layers):
+        """
+        Determine the sign of the direction
+        based on class means.
+
+        Args:
+            hidden_states: dict[layer] -> (N, hidden_dim)
+            train_choices: list or np.array of 0/1 labels
+            hidden_layers: list of layer indices
+
+        Returns:
+            signs: dict[layer] -> list of 1 or -1 (one per component)
+        """
+        signs = {}
+        train_choices = np.array(train_choices)
+
+        for layer in hidden_layers:
+            H = np.array(hidden_states[layer])
+            assert H.shape[0] == len(train_choices), (
+                f"Shape mismatch: {H.shape[0]} hidden states vs {len(train_choices)} labels"
+            )
+
+            pos_mask = train_choices == 1
+            neg_mask = train_choices == 0
+
+            H_pos = H[pos_mask]
+            H_neg = H[neg_mask]
+
+            signs[layer] = []
+            for component_index in range(self.n_components):
+                direction = self.directions[layer][component_index]
+
+                # Project both clusters on the direction
+                proj_pos = H_pos @ direction
+                proj_neg = H_neg @ direction
+
+                # If the positive class has higher mean projection, keep +1, else flip
+                sign = 1 if np.mean(proj_pos) > np.mean(proj_neg) else -1
+                signs[layer].append(sign)
+
+        return signs
+
 
 class RandomRepReader(RepReader):
     """Get random directions for each hidden layer. Do not use hidden 
