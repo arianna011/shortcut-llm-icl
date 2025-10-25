@@ -242,23 +242,21 @@ class ClusterMeanRepReader(RepReader):
                 f"Shape mismatch: {H.shape[0]} hidden states vs {len(train_choices)} labels"
             )
 
-            pos_mask = train_choices == 1
-            neg_mask = train_choices == 0
+            # Split into positive and negative classes
+            H_pos = H[train_choices == 1]
+            H_neg = H[train_choices == 0]
 
-            H_pos = H[pos_mask]
-            H_neg = H[neg_mask]
+            # Single direction vector for this layer
+            direction = np.array(self.directions[layer])
+            assert direction.ndim == 1, f"Expected 1D direction, got shape {direction.shape}"
 
-            signs[layer] = []
-            for component_index in range(self.n_components):
-                direction = self.directions[layer][component_index]
+            # Project both clusters on the direction
+            proj_pos = H_pos @ direction
+            proj_neg = H_neg @ direction
 
-                # Project both clusters on the direction
-                proj_pos = H_pos @ direction
-                proj_neg = H_neg @ direction
-
-                # If the positive class has higher mean projection, keep +1, else flip
-                sign = 1 if np.mean(proj_pos) > np.mean(proj_neg) else -1
-                signs[layer].append(sign)
+            # Choose sign so that positive class has higher projection
+            sign = 1 if np.mean(proj_pos) > np.mean(proj_neg) else -1
+            signs[layer] = [sign]
 
         return signs
 
