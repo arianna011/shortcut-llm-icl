@@ -1,54 +1,32 @@
 \documentclass[../main.tex]{subfiles}
+% !TeX root = ../main.tex
 \graphicspath{{\subfix{../assets/}}}
 \begin{document}
 
 \chapter*{Introduction}
-$(example^{(i)}, label^{(i)})$
-$(P^{(i)}_{x}, P^{(i)}_{y})$)
-$\{H'_l\}_{l \in layers}$
-$H_l' = H_l + \alpha  S_l sign(H_l^\top  V_l) V_l$
 
-\[
-H_l' \;=\; \left(I - \frac{V_l  V_l^\top}{\lVert  V_l \rVert^2}\right) H_l
-\]
-$v_{CM}$
-$R_l = H_l[even\_ids] - H_l[{odd\_ids}]$
-$V_l: (batch\_sz/2, hidden\_dim)$
+Both humans and artificial intelligence systems often display a natural tendency to take the easiest path when solving a problem, relying on \textit{shortcuts} that may be effective in specific task instances but fail to generalize across different examples.
+For instance, a human student might answer a multiple-choice question by recognizing familiar keywords rather than understanding the underlying concept, or judge the validity of an argument by how confidently it is stated rather than by its logical structure. In a similar way, a medical image classifier may associate the presence of an hospital watermark with a cancer diagnosis, instead of learning the actual visual features of the tumor. Language models, too, often exploit unintended cues: a text classifier might infer that a movie review is positive simply because it contains exclamation marks, or that a news article is political merely because it mentions a politician’s name.\\
 
-\[
-sign(P^{(i)}_x) =
-\begin{cases}
-1 & \text{if } x = +shortcut \\
-0 & \text{otherwise}
-\end{cases}
-\]
+Studies have shown that Large Language Models (LLMs), despite their vast learning capacity, can perform poorly on out-of-distribution inputs \citep{hendrycks2020pretrainedtransformersimproveoutofdistribution} and remain vulnerable to adversarial attacks \citep{wallace2021universaladversarialtriggersattacking}. This lack of robustness is often traced back to \textit{shortcut learning} \citep{Geirhos_2020}, the tendency of models to exploit spurious correlations in the training data rather than learning the intended reasoning process. In Natural Language Processing (NLP), shortcut learning typically manifest as reliance on superficial cues (such as lexical overlap, word order, or stylistic patterns) that correlate with the correct label in standard benchmarks but lead to failures in more realistic settings. Under the In-Context-Learning (ICL) paradigm, this issue becomes even more pronounced: LLMs may attend to shallow patterns in the instruction or examples within the prompt context rather than abstracting the underlying task structure, leading to brittle or biased behavior.\\
 
-% LLMs
-Large Language Models (LLMs) are the most successful class of AI systems currently employed in Natural Language Processing (NLP). They serve as modern assistants across several applications, ranging from open-domain conversation and question answering to machine translation and code generation. Their rapid progress has been largely driven by scaling: architectures with increasing depth and width, trained on massive and diverse web-scale corpora, have not yet shown signs of performance saturation. In fact, they follow empirical scaling laws that predict consistent improvements with greater model size, data, and compute \citep{kaplan2020scalinglawsneurallanguage}. The main limitation to further progress is therefore not intrinsic model capability, but rather the economic and environmental costs of training ever-larger architectures on ever-broader datasets. 
+Beyond technical robustness, shortcut learning also has important ethical implications. Because training corpora encode social stereotypes and historical imbalances, shortcuts often align with biased associations, like linking occupations to specific genders or ethnic groups \citep{bolukbasi2016mancomputerprogrammerwoman, seshadri2025smallchangeslargeconsequences}. As a result, shortcut-driven behavior can propagate or even amplify unfair outcomes in downstream applications, undermining the accountability and trustworthiness of AI systems in real-world deployments \citep{bender2021danger}.\\
+
+The detection and mitigation of shortcut learning is therefore crucial not only for achieving more robust and generalizable models, but also for ensuring that LLMs behave in ways that are ethically responsible and socially fair. This dual challenge motivates the present work, which investigates Representation Engineering (RepE) \citep{zou2025representationengineeringtopdownapproach} as a novel framework for identifying and mitigating shortcut mechanisms directly within the internal representations of LLMs.
 \\
 
-% ICL
-An interesting consequence of such large-scale pretraining is the emergence of In-Context Learning (ICL) \citep{xie2022explanationincontextlearningimplicit}. LLMs can perform novel tasks after being provided only a few input-output demonstrations, inferring the underlying pattern in a manner analogous to how humans leverage prior knowledge to solve new problems from examples. This ability grants them remarkable generalization capacity, allowing them to achieve state-of-the-art performance even when compared to finetuned task-specific models.  
-\\
-
-% Shortcut learning
-However, studies have shown that LLMs can still perform poorly on out-of-distribution inputs \citep{hendrycks2020pretrainedtransformersimproveoutofdistribution} and are susceptible to adversarial attacks \citep{wallace2021universaladversarialtriggersattacking}, revealing a lack of robustness that can be largely attributed to shortcut learning \citep{Geirhos_2020}.
-Shortcut learning refers to the tendency of machine learning models to solve tasks by exploiting spurious correlations in the training data rather than acquiring the intended reasoning process. In NLP, this often takes the form of relying on superficial cues such as lexical overlap, word order, or stylistic patterns, which can yield good benchmark performance but fail to generalize to real-case applications. For LLMs operating under an ICL paradigm, these risks are amplified: models may latch onto shallow patterns in the instruction or example prompts instead of inferring the correct task structure.  
-\\
-
-% short description of existing approaches + thesis contribution
-
-Beyond technical robustness, shortcut learning also has important ethical implications. Because training corpora encode social stereotypes and historical imbalances, shortcuts often align with biased associations, like linking occupations to specific genders or ethnic groups \citep{bolukbasi2016mancomputerprogrammerwoman, seshadri2025smallchangeslargeconsequences}. As a result, shortcut-driven behavior can propagate or even amplify unfair outcomes in downstream applications, raising concerns about accountability and trustworthiness in real-world deployments \citep{bender2021danger}. The detection and mitigation of shortcut learning is therefore crucial not only for achieving more robust and generalizable models, but also for ensuring that LLMs behave in ways that are ethically responsible and socially fair. This dual challenge motivates the present work.
-\\
-
-The content is organized as follows:
+%DA REVISIONARE
+In particular, this study aims to answer research questions such as:
 \begin{itemize}
-    \item in Chapter 1
-    \item in Chapter 2
+    \item is the concept of "taking a shortcut" explicitely encoded by LLMs in their hidden representations, meaning they know more than they reveal with generations, similarly to how they encode truthfulness of statements in the case of hallucinations \citep{azaria2023internalstatellmknows}? 
+    \item can a "shortcut reliance" linear direction be found in the latent representation space with methods such as Principal Component Analysis (PCA)?
+    \item can the steering of model's predictions at inference time via targeted direction amplification or suppression lead to more robust answers?
 \end{itemize}
+The answers to these questions would determine whether it is possible to mitigate shortcut learning by leveraging a lightweight and interpretable method such as RepE, which analyzes and control a model's hidden representations without any parameters update.\\
 
+Several experiments are conducted to test the effectiveness of the RepE framework adapted to the shortcut detection and mitigation task and to analyze the steered model latent representations to assess correct behavior and enhance method transparency. Given the complexity and novelty of this goal, the target case study is a simple one: LLMs under ICL for NLP tasks such as textual entailment.\\
 
-Chapter 1 introduces the theoretical background on in-context learning and shortcut learning. Chapter 2 reviews related work on robustness, adversarial vulnerability, and fairness in NLP. Chapter 3 presents the proposed methods for detecting and mitigating shortcut learning in LLMs. Chapter 4 evaluates these approaches empirically, and Chapter 5 discusses their implications for future research and ethical AI deployment. Finally, Chapter 6 concludes the thesis and outlines potential directions for further study.
+The content of the thesis is organized as follows. Chapter \ref{chap1} introduces the theoretical background on in-context learning and shortcut learning. Chapter 2 reviews related work on robustness, adversarial vulnerability, and fairness in NLP. Chapter 3 presents the proposed methods for detecting and mitigating shortcut learning in LLMs. Chapter 4 evaluates these approaches empirically, and Chapter 5 discusses their implications for future research and ethical AI deployment. Finally, Chapter 6 concludes the thesis and outlines potential directions for further study.
 
 
 
