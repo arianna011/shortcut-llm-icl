@@ -15,16 +15,16 @@ Beyond technical robustness, shortcut learning also has important ethical implic
 The detection and mitigation of shortcut learning is therefore crucial not only for achieving more robust and generalizable models, but also for ensuring that LLMs behave in ways that are ethically responsible and socially fair. This dual challenge motivates the present work, which investigates Representation Engineering (RepE) \citep{zou2025representationengineeringtopdownapproach} as a novel framework for identifying and mitigating shortcut mechanisms directly within the internal representations of LLMs.
 \\
 
-%DA REVISIONARE
-In particular, this study aims to answer research questions such as:
+In particular, this study aims to address the following research questions:
 \begin{itemize}
-    \item is the concept of "taking a shortcut" explicitely encoded by LLMs in their hidden representations, meaning they know more than they reveal with generations, similarly to how they encode truthfulness of statements in the case of hallucinations \citep{azaria2023internalstatellmknows}? 
-    \item can a "shortcut reliance" linear direction be found in the latent representation space with methods such as Principal Component Analysis (PCA)?
-    \item can the steering of model's predictions at inference time via targeted direction amplification or suppression lead to more robust answers?
+    \item Is the concept of "taking a shortcut" explicitely encoded by LLMs in their hidden representations? That is, do models internally know more than they reveal through their generations, similarly to how they encode the truthfulness of statements in cases of hallucination \citep{azaria2023internalstatellmknows}? 
+    \item Can a \textit{shortcut reliance} linear direction be identified in the latent representation space using methods such as Principal Component Analysis (PCA)?
+    \item Can steering model's predictions at inference time, via targeted amplification or suppression of such direction, lead to more robust and reliable outputs?
 \end{itemize}
-The answers to these questions would determine whether it is possible to mitigate shortcut learning by leveraging a lightweight and interpretable method such as RepE, which analyzes and control a model's hidden representations without any parameters update.\\
 
-Several experiments are conducted to test the effectiveness of the RepE framework adapted to the shortcut detection and mitigation task and to analyze the steered model latent representations to assess correct behavior and enhance method transparency. Given the complexity and novelty of this goal, the target case study is a simple one: LLMs under ICL for NLP tasks such as textual entailment.\\
+Answering these questions would clarify whether shortcut learning can be mitigated through a lightweight and interpretable approach such as RepE, which enables the analysis and control of a model's internal representations without requiring any parameters update.\\
+
+Several experiments are conducted to evaluate the effectiveness of the RepE framework when adapted to shortcut detection and mitigation, and to analyze how steering interventions affect model representations, with the goal of assessing both the correctness and the transparency of the proposed method. Given the complexity and novelty of this objective, the chosen case study focuses on a simple yet informative setting: LLMs performing In-Context-Learning on Natural Language Processing tasks such as textual entailment.\\
 
 The content of the thesis is organized as follows. Chapter \ref{chap1} introduces the theoretical background on in-context learning and shortcut learning. Chapter 2 reviews related work on robustness, adversarial vulnerability, and fairness in NLP. Chapter 3 presents the proposed methods for detecting and mitigating shortcut learning in LLMs. Chapter 4 evaluates these approaches empirically, and Chapter 5 discusses their implications for future research and ethical AI deployment. Finally, Chapter 6 concludes the thesis and outlines potential directions for further study.
 
