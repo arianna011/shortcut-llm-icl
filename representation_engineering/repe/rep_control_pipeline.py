@@ -47,3 +47,14 @@ class RepControlPipeline(TextGenerationPipeline):
             "sequences": output.sequences,
             "scores": output.scores                       # list of logits per token
         }
+    
+    # method that preserve gradients to allow interpretability techniques like Integrated Gradients
+    def forward_with_grad(self, text_inputs, activations=None):
+        self.wrapped_model.reset()
+        if activations is not None:
+            self.wrapped_model.set_controller(self.layers, activations, self.block_name)
+
+        inputs = self.tokenizer(text_inputs, return_tensors="pt").to(self.model.device)
+        outputs = self.model(**inputs, output_hidden_states=True)
+        self.wrapped_model.reset()
+        return outputs
