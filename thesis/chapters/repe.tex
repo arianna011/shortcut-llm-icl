@@ -7,8 +7,21 @@
 
 \section{Representation Engineering}
 
-Representation Engineering (RepE) \citep{zou2025representationengineeringtopdownapproach} is a novel approach to the interpretability analysis of Large Language Models (LLMs). It aims to enhance human understanding of their internal behaviors, both enabling a more effective use and mitigating the risks posed by hidden erroneous mechanisms, which represent a critical hazard given the growing pervasiveness of AI across society.\\
+Representation Engineering (RepE) \citep{zou2025representationengineeringtopdownapproach} is a recent approach to the interpretability analysis of Large Language Models (LLMs). It aims to enhance human understanding of their internal behaviors, thereby enabling a more informed and effective use of such systems, while mitigating the risks posed by hidden erroneous mechanisms, which represent a critical hazard given the growing pervasiveness of AI across society.\\
 
-RepE finds theoritical grounding in the \textit{Hopfieldian} view of cognitive neuroscience, which interprets cognition as computation over representational spaces emerging from the activity of neural populations, abstracting away the specific connections betweeen individual neurons. This perspective focuses on high-level cognitive phenomena, contrasting with the \textit{Sherringtonian} view, which centers on single neurons and node-to-node interactions \citep{cognitivescience}. While the field of Mechanistic Interpretability\footnote{A branch of AI research that seeks to "reverse-engineer" neural networks by explaining their outputs in terms of circuits and algorithms} adopts a Sherringtonian-like, bottom-up approach by studying the relations between hidden units (e.g. attention heads or MLP neurons) and model behaviors, RepE proposes a complementary top-down interpretation of LLMs. It aims to link emergent phenomena within models to their hidden representations, which have been shown to become increasingly semantically structured across layers \citep{tenney2019bertrediscoversclassicalnlp}. This may overcome the limits of bottom-up approaches in capturing complex and distributed effects in large networks, emphasizing how LLMs encode human concepts in latent spaces rather than focusing on their specific neural architecture.
+RepE finds theoritical grounding in the \textit{Hopfieldian} view of cognitive neuroscience, which interprets cognition as computation over representational spaces emerging from the activity of neural populations, abstracting away the specific connections betweeen individual neurons. This perspective focuses on high-level cognitive phenomena, contrasting with the \textit{Sherringtonian} view, which centers on single neurons and node-to-node interactions \citep{cognitivescience}. While the field of Mechanistic Interpretability\footnote{A branch of AI research that seeks to "reverse-engineer" neural networks by explaining their outputs in terms of circuits and algorithms} adopts a Sherringtonian-like, bottom-up approach by studying the relations between hidden units (e.g. attention heads or MLP neurons) and model behaviors, RepE proposes a complementary top-down interpretation of LLMs. It aims to link emergent phenomena within models to their hidden representations, which have been shown to become increasingly semantically structured across layers \citep{tenney2019bertrediscoversclassicalnlp}. This may overcome the limits of bottom-up approaches in capturing complex and distributed effects in large networks, emphasizing how LLMs encode human concepts in latent spaces rather than focusing on their specific neural architecture.\\
+
+In simple terms, RepE operates by extracting an LLM's internal representations of selected concepts (e.g. emotion, utility, honesty) from carefully crafted input prompts using so-called \textit{RepReading} methods, and subsequently by employing these representations to control and manipulate the frozen model’s generations at inference time through \textit{RepControl} approaches (Figure \ref{fig:repeoverview}).
+
+\subsection{Framework}
+
+This section introduces the original Representation Engineering (RepE) framework as described in \citep{zou2025representationengineeringtopdownapproach}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{assets/RepE_overview_no_title.png}
+    \caption{Overview of the main pipeline of the Representation Engineering (RepE) framework}
+    \label{fig:repeoverview}
+\end{figure}
 
 \end{document}
