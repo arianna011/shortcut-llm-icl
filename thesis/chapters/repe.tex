@@ -3,7 +3,7 @@
 \graphicspath{{\subfix{../assets/}}}
 \begin{document}
 
-\chapter{TODO}
+\chapter{Method}
 
 \section{Representation Engineering}
 
@@ -13,9 +13,22 @@ RepE finds theoritical grounding in the \textit{Hopfieldian} view of cognitive n
 
 In simple terms, RepE operates by extracting an LLM's internal representations of selected concepts (e.g. emotion, utility, honesty) from carefully crafted input prompts using so-called \textit{RepReading} methods, and subsequently by employing these representations to control and manipulate the frozen model’s generations at inference time through \textit{RepControl} approaches (Figure \ref{fig:repeoverview}).
 
-\subsection{Framework}
+\subsection{RepReading}
 
-This section introduces the original Representation Engineering (RepE) framework as described in \citep{zou2025representationengineeringtopdownapproach}.
+The goal of \textit{RepReading} methods is to extract the neural activity associated with a given high-level human concept from a target LLM, in order to enhance the understanding of the model's internal representations and enable subsequent monitoring and control of its generations.\\
+
+More formally, the authors of RepE \citep{zou2025representationengineeringtopdownapproach} distinguish between \textit{concepts} and \textit{functions}. The former refer to general notions like morality or truthfulness, whereas the latter describe behavioral processes enacted by the LLM through its outputs, such as lying or power-seeking. To elicit both concept and function representations, they propose a baseline method called Linear Artificial Tomography (LAT), which consists of three main steps:
+\begin{itemize}
+    \item Defining an appropriate task template;
+    \item Collecting the corresponding neural activity from the LLM;
+    \item Extracting the desired concept or function representation using a linear model.
+\end{itemize}
+
+% formalization of task template and stimulus
+% real examples of task templates for both concepts and functions
+
+
+ 
 
 \begin{figure}
     \centering
@@ -23,6 +36,8 @@ This section introduces the original Representation Engineering (RepE) framework
     \caption{Overview of the main pipeline of the Representation Engineering (RepE) framework}
     \label{fig:repeoverview}
 \end{figure}
+
+\subsection{RepControl}
 
 \begin{sidewaysfigure}
     \centering
