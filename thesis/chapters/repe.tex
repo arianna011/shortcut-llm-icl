@@ -13,29 +13,56 @@ RepE finds theoritical grounding in the \textit{Hopfieldian} view of cognitive n
 
 In simple terms, RepE operates by extracting an LLM's internal representations of selected concepts (e.g. emotion, utility, honesty) from carefully crafted input prompts using so-called \textit{RepReading} methods, and subsequently by employing these representations to control and manipulate the frozen model’s generations at inference time through \textit{RepControl} approaches (Figure \ref{fig:repeoverview}).
 
-\subsection{RepReading}
-
-The goal of \textit{RepReading} methods is to extract the neural activity associated with a given high-level human concept from a target LLM, in order to enhance the understanding of the model's internal representations and enable subsequent monitoring and control of its generations.\\
-
-More formally, the authors of RepE \citep{zou2025representationengineeringtopdownapproach} distinguish between \textit{concepts} and \textit{functions}. The former refer to general notions like morality or truthfulness, whereas the latter describe behavioral processes enacted by the LLM through its outputs, such as lying or power-seeking. To elicit both concept and function representations, they propose a baseline method called Linear Artificial Tomography (LAT), which consists of three main steps:
-\begin{itemize}
-    \item Defining an appropriate task template;
-    \item Collecting the corresponding neural activity from the LLM;
-    \item Extracting the desired concept or function representation using a linear model.
-\end{itemize}
-
-% formalization of task template and stimulus
-% real examples of task templates for both concepts and functions
-
-
- 
-
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{assets/RepE_overview_no_title.png}
     \caption{Overview of the main pipeline of the Representation Engineering (RepE) framework}
     \label{fig:repeoverview}
 \end{figure}
+
+\subsection{RepReading}
+
+The goal of \textit{RepReading} methods is to extract the neural activity associated with a given high-level human concept from a target LLM, in order to enhance the understanding of the model's internal representations and enable subsequent monitoring and control of its generations.\\
+
+More formally, the authors of RepE \citep{zou2025representationengineeringtopdownapproach} distinguish between \textit{concepts} and \textit{functions}. The former refer to general notions like morality or truthfulness, whereas the latter describe behavioral processes enacted by the LLM through its outputs, such as lying or power-seeking. To elicit both concept and function representations, they propose a baseline method called Linear Artificial Tomography (LAT), which consists of three main steps:
+\begin{enumerate}
+    \item Defining an appropriate task template;
+    \item Collecting the corresponding neural activity from the LLM;
+    \item Extracting the desired concept or function representation using a linear model.\\
+\end{enumerate}
+
+\noindent\textbf{Step 1.} Designing a suitable prompt template to feed the target LLM in order to stimulate the neural activity to be extracted is a crucial step in the RepReading pipeline. The model input must both isolate and fully capture the desired concept or function within the corresponding produced representations. To extract the model's understanding of a given concept $c$, the proposed template $T_c$ for decoder-based LLMs is: \\
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,boxrule=0.2pt,arc=2pt]
+\texttt{Consider the amount of \textcolor{red!50}{<concept>} in the following: }\\[2pt]
+\texttt{\textcolor{blue!50}{<stimulus>}}\\
+\texttt{The amount of \textcolor{red!50}{<concept>} is}
+\end{tcolorbox}
+
+\noindent Here, the \textit{stimulus} consists in unlabeled or self-generated statements that vary in the intensity of the concept's presence. This setup allows the extraction of the model's declarative knowledge about specific semantic areas. For instance, if the concept $c$ corresponds to an emotion (e.g. "anger"), the model is stimulated to estimate its presence in a given scenario, thereby activating specific patterns in its hidden representations.\\
+
+To elicit the procedural knowledge related to a function $f$, instead, two contrastive task-related prompts are required: an \textit{experimental} prompt that induces the model to execute the function $f$ and a \textit{reference} prompt that does not. They are used to generate, respectively, the templates $T^+_f$ and $T^-_f$, which share the following structure:\\
+
+\begin{tcolorbox}[colback=gray!5,colframe=gray!50,boxrule=0.2pt,arc=2pt]
+\texttt{<USER TAG> \textcolor{blue!50}{<instruction>} \textcolor{red!50}{<experimental/reference prompt>} }\\[2pt]
+\texttt{<ASSISTANT TAG> \textcolor{blue!50}{<output>}}
+\end{tcolorbox}
+
+\noindent In this case, the \textit{stimulus} is composed of the \textit{<instruction>} and \textit{<output>} fields, which can be derived from instruction-tuning datasets and do not contain explicit labels related to the target function, thus making the procedure unsupervised. For example, if the function $f$ corresponds to "power-seeking", the two contrastive prompts could be:\\
+
+\begin{tcolorbox}[colback=white,colframe=green!50,boxrule=0.2pt,arc=2pt]
+\texttt{USER: \textcolor{blue!50}{Pretend you're an} \textcolor{red!50}{ambitious, power-seeking} \textcolor{blue!50}{person. Tell me what you want to do.}}\\[2pt]
+\texttt{ASSISTANT: \textcolor{blue!50}{<output>}}
+\end{tcolorbox} and \begin{tcolorbox} [colback=white,colframe=green!50,boxrule=0.2pt,arc=2pt] \texttt{USER: \textcolor{blue!50}{Pretend you're a} \textcolor{red!50}{docile, power-aversive} \textcolor{blue!50}{person. Tell me what you want to do.}}\\[2pt]
+\texttt{ASSISTANT: \textcolor{blue!50}{<output>}}
+\end{tcolorbox}
+
+
+
+
+ 
+
+
 
 \subsection{RepControl}
 
