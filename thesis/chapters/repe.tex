@@ -57,12 +57,39 @@ To elicit the procedural knowledge related to a function $f$, instead, two contr
 \texttt{ASSISTANT: \textcolor{blue!50}{<output>}}
 \end{tcolorbox}
 
+\vspace{1em} 
+\noindent\textbf{Step 2.} After crafting the input for the transformer-based LLM whose knowledge is to be analyzed, hidden representations can be extracted from different layers and token positions. For decoder models, the representations corresponding to a concept $c$ are taken from the last token preceding the model's prediction (i.e. the final token in the template $T_c$). According to the Next Token Prediction objective used during LLM pretraining, this position is expected to contain the richest concept-specific signal, as it marks the transition point where the model shifts from understanding the semantic query (e.g. "The amount of honesty is") to producing its estimation.\\
 
+The set of activations $A_c$ collected for a concept $c$ from a decoder model $M$, given a set of stimuli $S$, can be formalized as:
 
+\begin{equation}
+    A_c = \{\ Rep(M,T_c(s_i))[-1] \mid s_i \in S\ \}
+\end{equation}
+\noindent where $Rep$ denotes a function that takes a model and an input, returning the model's representations from all layers and token positions ($-1$ indicates the last token in the input sequence).\\
 
- 
+To gather the activations corresponding to a function $f$, instead, all tokens from the model's response to the input stimulus are considered, since the LLM should exhibit the function's behavior throughout its generated sequence (i.e. the tokens in the \textit{<output>} field of the $T_f$ template). Thus, the representations $A_f^\pm$ extracted from the experimental and reference prompts can be defined as:
 
+\begin{equation}
+    A_f^\pm = \{ \ Rep(M, T_f^\pm(q_i, a_i^k))[-1] \mid (q_i,a_i) \in S, 0 < k \le |a_i|\ \}
+\end{equation}
 
+\noindent where $(q_i,a_i)$ denotes a pair consisting of a question and the corresponding answer (the \textit{<instruction>} and \textit{<output>} fields in $T_f$) and $a_i^k$ represents the partial answer truncated after token $k$.\\
+
+\noindent\textbf{Step 3.} Finally, a latent direction identifying the target concept or function is estimated from the collected neural activity of the LLM by leveraging a linear model. Both supervised approaches (e.g. linear probing, difference between cluster means) and unsupervised ones (e.g. PCA, K-means) can be employed, although the original RepE paper primarily adopts Principal Component Analysis (PCA).\\
+
+In particular, to construct the input for PCA:
+\begin{itemize}
+    \item the set of input stimuli $S$ is divided into pairs $(s_i, s_{i+1})$, where each pair ideally differs only in the presence or intensity of the target concept or function;
+    \item hidden states at the selected token position are collected for each stimulus in every pair, generating a collection $H = [\{H(s_0), H(s_1)\},\ \{H(s_2), H(s_3)\}, ...]$;
+    \item the relative difference between the hidden states within each pair is computed and normalized, yielding the PCA input $D = [normalize(H(s_0) - H(s_1)),\ normalize(H(s_2) - H(s_3)), ...]$.
+\end{itemize}
+
+\vspace{1em} 
+\noindent Specifically, PCA is computed on $\{A_c^{(i)} - A_c^{(j)} \}$ for concepts and on $\{(-1)^i (A_f^{+(i)} - A_f^{-(i)})\}$ for functions, where the signs of the experimental and reference representations are changed across pairs.\\
+
+\noindent The first principal component derived from PCA is referred to as the \textit{reading vector} $v$ and represents a latent direction for each hidden layer. In practice, $v$ may have a different sign for each layer, indicating the direction that maximizes the activation of the elicited concept or function. This sign can be estimated by using labeled training pairs: by projecting the corresponding hidden states onto the direction $v$, the alignment of the "positive" example in the pair (i.e. the one expressing the target concept or function more strongly) with either the highest or lowest projection value determines the correct orientation.\\
+
+To use the reading vector in downstream analysis on a test set $S_{\text{test}}$, hidden states $H_{\text{test}}$ are extracted and projected onto $v$ via dot product, obtaining scalar scores that are intended to quantify the amount of the target concept or function encoded in those representations.
 
 \subsection{RepControl}
 
@@ -72,5 +99,7 @@ To elicit the procedural knowledge related to a function $f$, instead, two contr
     \caption{Overview of the Representation Engineering (RepE) framework adapted to shortcut mitigation}
     \label{fig:myrepeframework}
 \end{sidewaysfigure}
+
+% honesty example
 
 \end{document}
