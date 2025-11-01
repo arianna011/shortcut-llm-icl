@@ -121,8 +121,21 @@ The authors of RepE \citep{zou2025representationengineeringtopdownapproach} intr
 \vspace{1em} 
 A simple way to evaluate the effectiveness of RepControl is to perform manipulation experiments that test for a causal relationship between representation modification and changes in the model's predictions. However, further interpretability analysis may be required to rule out the possibility that positive outcomes result from chance correlations or unintended side effects.
 
+\subsection{Example Application: Honesty in LLMs}
 
-% honesty example
+The original RepE paper \citep{zou2025representationengineeringtopdownapproach} presents several compelling examples illustrating the application of the proposed framework. For instance, it provides a detailed analysis on experiments conducted with \textit{RepReading} and \textit{RepControl} on concepts and functions related to \textit{honesty} in LLMs.\\
+
+In the context of AI models, honesty refers to the consistency between a model's outputs and its internal beliefs, which can be investigated through interpretability techniques. When a model produces false statements, this may result either from a lack of capacity (i.e. the model genuinely believes something that is factually incorrect) or from \textit{lying} behavior, which RepE experiments sought to detect.\\
+
+\noindent First, the authors demonstrated that LLMs possess an internal and consistent concept of truthfulness that is not always aligned with their generations. By applying the LAT technique, they extracted a "truthfulness" direction from datasets of true-false statements and showed that it is able to achieve superior performance on standard question-answering benchmarks compared to few-shot prompting. Moreover, since the direction was derived from diverse data sources, its strong performance suggests a high degree of generalizability.\\
+
+\noindent By comparing LLM predictions based on the truthfulness LAT direction and zero-shot model performance, the authors concluded that large models possess reliable internal representations of truth but often produce outputs that deviate from them, exhibiting a form of \textit{dishonest} behavior. A simple lie detector was constructed by summing the negated honesty scores across selected hidden layers at each token position of a given statement. It successfully identified various forms of falsehoods, hallucination and misleading information. The LAT reading vector was also employed as a classifier of true and false statements on an held-out in-distribution test set, achieving an accuracy of approximately 90\%. A marked contrast was observed in the neural activations associated to honest versus dishonest generations (e.g. "The president of the United states in 2018 is Donald Trump" versus "The president of the United States in 2030 is Elizabeth Warren").\\
+
+\noindent Furthermore, by adding the honesty vector to the LLM activations via RepControl techniques, the authors succesfully steered model responses toward more or less honest answers, demonstrating a strong counterfactual effect and improving the baseline zero-shot performance on TruthfulQA MC1 by up to 19\%.\\
+
+Other examples presented in the paper included experiments on ethically critical themes such as immorality and power-seeking tendencies of LLMs, as well as studies on emotions, bias and fairness, memorization, knowledge and model editing. This broad range of application areas highlights the vast potential of the RepE framework and served as one of the motivations for its adoption in the present work on shorcut learning detection and mitigation.
+
+\section{Shortcut detection and mitigation with RepE}
 
 \begin{sidewaysfigure}
     \centering
