@@ -5,11 +5,12 @@
 
 \chapter{Method}
 
-% method outline + chapter contents
+The present work aims to address the problem of \textit{shorcut learning} in Large Language Models (LLMs) under In-Context Learning (ICL) by adapting the recently proposed Representation Engineering (RepE) framework \citep{zou2025representationengineeringtopdownapproach} to this new context, with the goal of developing a training-free and interpretable approach to shortcut detection and mitigation. The original framework is described in Section \ref{sec:repe}, followed by its integration into the proposed shortcut mitigation framework discussed in Section \ref{sec:method}.
 
 \section{Representation Engineering}
+\label{sec:repe}
 
-Representation Engineering (RepE) \citep{zou2025representationengineeringtopdownapproach} is a recent approach to the interpretability analysis of Large Language Models (LLMs). It aims to enhance human understanding of their internal behaviors, thereby enabling a more informed and effective use of such systems, while mitigating the risks posed by hidden erroneous mechanisms, which represent a critical hazard given the growing pervasiveness of AI across society.\\
+Representation Engineering (RepE) \citep{zou2025representationengineeringtopdownapproach} is a recent approach to the interpretability analysis of LLMs. It aims to enhance human understanding of their internal behaviors, thereby enabling a more informed and effective use of such systems, while mitigating the risks posed by hidden erroneous mechanisms, which represent a critical hazard given the growing pervasiveness of AI across society.\\
 
 RepE finds theoritical grounding in the \textit{Hopfieldian} view of cognitive neuroscience, which interprets cognition as computation over representational spaces emerging from the activity of neural populations, abstracting away the specific connections betweeen individual neurons. This perspective focuses on high-level cognitive phenomena, contrasting with the \textit{Sherringtonian} view, which centers on single neurons and node-to-node interactions \citep{cognitivescience}. While the field of Mechanistic Interpretability\footnote{A branch of AI research that seeks to "reverse-engineer" neural networks by explaining their outputs in terms of circuits and algorithms} adopts a Sherringtonian-like, bottom-up approach by studying the relations between hidden units (e.g. attention heads or MLP neurons) and model behaviors, RepE proposes a complementary top-down interpretation of LLMs. It aims to link emergent phenomena within models to their hidden representations, which have been shown to become increasingly semantically structured across layers \citep{tenney2019bertrediscoversclassicalnlp}. This may overcome the limits of bottom-up approaches in capturing complex and distributed effects in large networks, emphasizing how LLMs encode human concepts in latent spaces rather than focusing on their specific neural architecture.\\
 
@@ -122,6 +123,7 @@ The authors of RepE \citep{zou2025representationengineeringtopdownapproach} intr
 A simple way to evaluate the effectiveness of RepControl is to perform manipulation experiments that test for a causal relationship between representation modification and changes in the model's predictions. However, further interpretability analysis may be required to rule out the possibility that positive outcomes result from chance correlations or unintended side effects.
 
 \subsection{Example Application: Honesty in LLMs}
+\label{subsec:honesty}
 
 The original RepE paper \citep{zou2025representationengineeringtopdownapproach} presents several compelling examples illustrating the application of the proposed framework. For instance, it provides a detailed analysis on experiments conducted with \textit{RepReading} and \textit{RepControl} on concepts and functions related to \textit{honesty} in LLMs.\\
 
@@ -136,6 +138,13 @@ In the context of AI models, honesty refers to the consistency between a model's
 Other examples presented in the paper included experiments on ethically critical themes such as immorality and power-seeking tendencies of LLMs, as well as studies on emotions, bias and fairness, memorization, knowledge and model editing. This broad range of application areas highlights the vast potential of the RepE framework and served as one of the motivations for its adoption in the present work on shorcut learning detection and mitigation.
 
 \section{Shortcut detection and mitigation with RepE}
+\label{sec:method}
+
+As mentioned in Section \ref{sec:shortcutlearning}, \textit{shortcut learning} refers to the tendency of models to rely on spurious or superficial features that correlate with the target label rather than on the underlying causal or semantic cues. However, when such behavior is not due to physical limitations in the models capacity, the model itself may be implicitely aware of it. Just as Large Language Models (LLMs) have been shown to "lie", meaning they can generate false statements even when maintaining an internally coherent representation of truth (Section \ref{subsec:honesty}), they may also activate specific patterns within their hidden states when relying on shortcut-based reasoning. In the case of honesty, previous work  demonstrated that information about truthfulness is encoded into the activations of LLMs, suggesting that models "know when they're lying" \citep{azaria2023internalstatellmknows}. By analogy, they may also "know when they're taking a shortcut".\\
+
+If this hypothesis holds, the Representation Engineering (RepE; Section \ref{sec:repe}) framework provides a natural foundation for investigating such phenomena. By operating directly in the representational space of LLMs, RepE allows both the extraction of latent directions corresponding to shortcut mechanisms (\textit{RepReading}) and their targeted manipulation (\textit{RepControl}). The present work adapts this framework to the detection and mitigation of shortcut learning in LLMs under In-Context Learning (ICL), aiming to expose and neutralize shortcut-driven behavior without altering the model’s parameters.
+
+% design discussion (assumptions, expectations)
 
 \begin{sidewaysfigure}
     \centering
