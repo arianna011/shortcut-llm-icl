@@ -144,7 +144,56 @@ As mentioned in Section \ref{sec:shortcutlearning}, \textit{shortcut learning} r
 
 If this hypothesis holds, the Representation Engineering (RepE; Section \ref{sec:repe}) framework provides a natural foundation for investigating such phenomena. By operating directly in the representational space of LLMs, RepE allows both the extraction of latent directions corresponding to shortcut mechanisms (\textit{RepReading}) and their targeted manipulation (\textit{RepControl}). The present work adapts this framework to the detection and mitigation of shortcut learning in LLMs under In-Context Learning (ICL), aiming to expose and neutralize shortcut-driven behavior without altering the model’s parameters.
 
-% design discussion (assumptions, expectations)
+\subsection{Shortcut detection}
+
+RepReading methods can be leveraged to identify a linear direction in the latent space of an LLM's representations that corresponds to the model \textit{function} (see Section \ref{subsec:repreading}) of "taking a (specific kind of) shortcut". Since the term "shortcut" encompasses several types of spurious cues that a model can exploit, the present setting targets one specific kind of shortcut at a time (for a taxonomy of shortcut types refer to Section \ref{sec:types_icl}). \\
+
+As illustrated in Figure \ref{fig:myrepeframework}, the first step is preprocessing the data that will be fed to the RepReading pipeline to extract a latent direction corresponding to the selected shortcut type. The proposed procedure is the following:
+
+\begin{enumerate}
+    \item Begin with a dataset for an arbitrary NLP classification task containing textual statements and corresponding labels $(example^{(i)}, label^{(i)})$, where each example exists both in its normal form (referred to as the \textit{clean} example) and in a version where a specific shortcut cue has been injected (referred to as the \textit{dirty} example);
+    
+    \item Select prompt templates $T_f^+$ and $T_f^-$ (see Section \ref{subsec:repreading}) to add an ICL context respectively to dirty and clean statements. In this work, a zero-shot setting is adopted using a prompt template of the form:\\
+    
+    \begin{tcolorbox}[colback=gray!5,colframe=gray!50,boxrule=0.2pt,arc=2pt]
+    \texttt{<USER TAG> \textcolor{blue!50}{<instruction>} \textcolor{red!50}{<dirty/clean example>} }\\[2pt]
+    \texttt{<ASSISTANT TAG>}
+    \end{tcolorbox}
+
+    where \textit{<instruction>} is a natural language task description that may differ between dirty and clean examples to stimulate either shortcut-driven or robust model behavior, thus enhancing the discriminability of the corresponding activations;
+
+    \item After formatting the examples with the chosen prompt templates, clean and dirty instances derived from the same original statement are paired to form a dataset of contrastive examples $(P^{(i)}_{+shortcut}, P^{(i)}_{-shortcut})$. Optionally, this dataset can be filtered to include only selected pairs (for instance, those where the model's output label differs between the clean and dirty prompts, in order to retain data corresponding to shortcut cues that actually induce a behavioral shift);
+    
+    \item The examples within each pair are then randomly shuffled to get pairs $(P_x^{(i)}, P_y^{(i)})$, where $x,\ y \in \{ +shortcut, -shortcut \}$, and labeled through a function:
+    \[
+        Label(P_x^{(i)}) =
+        \begin{cases}
+        1 \ &if\ \text{x = +shortcut} \\[4pt]
+        0 & otherwise
+        \end{cases}
+    \]
+
+    These labels will be subsequently used to estimate the sign of the extracted direction so that its positive orientation corresponds to an increase in shortcut-driven behavior.
+
+    % repreading pipeline from figure
+    % repreaders types
+    % how output can be used for shortcut detection
+
+
+\end{enumerate}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{assets/RepReaders_no_title.png}
+    \caption{Overview of the input and output of the two types of \textit{RepReaders} proposed by the RepE framework}
+    \label{fig:repreaders}
+\end{figure}
+
+\subsection{Shortcut mitigation}
+
+\subsection{Design discussion}
+
+% design discussion (assumptions, expectations, limitations)
 
 \begin{sidewaysfigure}
     \centering
