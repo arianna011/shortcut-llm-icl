@@ -173,14 +173,13 @@ As illustrated in Figure \ref{fig:myrepeframework}, the first step is preprocess
         \end{cases}
     \]
 
-    These labels will be subsequently used to estimate the sign of the extracted direction so that its positive orientation corresponds to an increase in shortcut-driven behavior.
-
-    % repreading pipeline from figure
-    % repreaders types
-    % how output can be used for shortcut detection
-
-
+    These labels will be subsequently used to estimate the sign of the extracted direction so that its positive orientation corresponds to an increase in shortcut-driven behavior.\\
 \end{enumerate}
+
+The aforementioned steps yield the data and labels that serve as input to the RepReading pipeline. Given a target LLM and its corresponding tokenizer, hidden-state representations for the input prompts are extracted from the model for a selected representation token at the chosen hidden layers. Formally, the set $\{ H_l \}_{l \in layers}$ is collected, where each $H_l$ represents a tensor of size \textit{(batch size, hidden dimension)} corresponding to the hidden state\footnote{In decoder-only transformer-based LLMs, hidden states are the internal vector representations produced at each layer of the model for every token in the input sequence.
+At layer $l$, each token $t_i$ is associated with a hidden-state vector $h_l^i \in \mathbb{R}^d$, where $d$ is the model’s hidden dimensionality.
+These vectors encode the model’s contextual understanding of each token given all preceding ones and serve as the basis for predicting the next token during generation.} at layer $l$.
+Then, for each layer $l$, the difference between hidden states at even and odd positions is computed to quantify the distance between the representations of dirty and clean prompts (which were paired and subsequently concatenated into a single list providing an alternation of dirty and clean examples). This operation yields a set of "relative" hidden states $\{ R_l \}_{l \in layers}$, where each $R_l$ is a tensor of size \textit{(batch size $\div 2$, hidden dimension)}.\\
 
 \begin{figure}
     \centering
@@ -188,6 +187,20 @@ As illustrated in Figure \ref{fig:myrepeframework}, the first step is preprocess
     \caption{Overview of the input and output of the two types of \textit{RepReaders} proposed by the RepE framework}
     \label{fig:repreaders}
 \end{figure}
+
+These representations are then used as input to the specific \textit{RepReader} to be trained. In the RepE framework, a RepReader is a module responsible for extracting the latent direction associated with the concept or function of interest (in this case, the "shortcut reliance" function), and can employ either unsupervised or supervised methods. In particular, Principal Component Analysis (PCA) and ClusterMean are the main approaches adopted (Figure \ref{fig:repreaders}).\\
+
+The former is an unsupervised technique that requires only contrastive hidden states as input. It computes the difference between paired representations to obtain relative hidden states and then extracts the desired number of principal components from the resulting data for each layer. The first principal component (i.e. the direction explaining the greatest variance in the data) is hypothesized to correspond to the latent function being elicited. ClusterMean, on the other hand, is a supervised method that requires class labels (clean or dirty) of each hidden-state representation. It clusters the representations into two groups, computes the mean vector of each cluster to obtain class representatives, and then defones the latent directin as the difference between the positive (dirty) and negative (clean) groups.\\
+
+Therefore, both methods produce a set of directions $\{ V_l \}_{l \in layers}$, where $ V_l $ is a vector of size $(hidden dimension)$ representing the latent concept or function to be extracted, referred to as the \textit{reading vector}. In addition, as already mentioned, both methods use the training labels to estimate a sign $S_l$ for each layer $l$, determining whether shortcut representations tend to lie on the high-value or low-value side of each direction.\\
+
+
+
+    % repreading pipeline from figure
+    % repreaders types
+    % how output can be used for shortcut detection
+
+
 
 \subsection{Shortcut mitigation}
 
