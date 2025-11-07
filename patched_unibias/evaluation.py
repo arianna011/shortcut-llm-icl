@@ -32,11 +32,11 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
                    gen_tokens: int = 10,
                    repE: bool = False, 
                    activations_art_name: str = "",
+                   operator: str = "linear_comb",
                    intervention_layers: List[int] = None,
                    save_every: int = 100, 
                    save_dir: str = "results_tmp", 
-                   resume: bool = False,
-                   failures_csv_path: str = None) -> tuple[float, List[List[float]], List[List[int]]]:
+                   resume: bool = False) -> tuple[float, List[List[float]], List[List[int]]]:
     """
     Evaluate the ICL accuracy of the input model on the provided prompts.
 
@@ -51,11 +51,11 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
         gen_tokens: maximum number of new tokens to generate
         repE: whether to use Representantion Engineering
         activations_art_name: name of the WB artifact containing RepReading directions
+        operator: type of operation performed on current representations and given activations for RepControl
         intervention_layers: list of hidden layers where to inject RepE Control
         save_every: number of samples to process before storing intermediate results
         save_dir: where to store intermediate results
         resume: whether to restart an interrupted evaluation from the last stored intermediate results
-        failures_csv_path: a path to a CSV file where to store misclassified examples
 
     Returns:
         (float) final classification accuracy
@@ -65,7 +65,6 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
 
     """
     predictions, all_label_probs = [], []
-    fail_examples = []
     tokenizer.pad_token = tokenizer.eos_token
 
     model.eval()
@@ -114,7 +113,8 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
             if repE:  
               output_dict = rep_control_pipeline(prompt, 
                                                 activations=activations,  
-                                                max_new_tokens=gen_tokens, 
+                                                max_new_tokens=gen_tokens,
+                                                operator=operator, 
                                                 do_sample=False)
             else:
               output_dict = model.generate(input_ids=inputs["input_ids"], 
@@ -140,19 +140,6 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
             predictions.append(prediction_i)
             all_label_probs.append(predict_prob_list)
 
-            # optionally save failure examples
-            if failures_csv_path:
-                ground_truth = labels[index]
-                if prediction_i != ground_truth:
-                     fail_examples.append({
-                        "index": index,
-                        "prompt": prompt.replace('\n', ' ').replace('\r', ' ').strip(),
-                        "prediction": int(prediction_i),
-                        "ground_truth": int(ground_truth),
-                        "output_text": outputs_only.strip().replace('\n', ' ').replace('\r', ' '),
-                        "probabilities": json.dumps(predict_prob_list)
-                    })
-
             # free memory 
             del inputs, input_ids, attention_mask, output_dict, scores, answer_probs
             gc.collect()
@@ -172,11 +159,6 @@ def ICL_evaluation(model: transformers.PreTrainedModel,
     acc, _ = classification_accuracy(predictions, labels[:len(predictions)])
     print('Final classification accuracy:', acc)
     print(cf)
-
-    # optionally store fail examples on file
-    if fail_examples:
-        store_fail_examples(fail_examples, failures_csv_path)
-        print(f"\nSaved {len(fail_examples)} failure cases to {failures_csv_path}")
 
     return acc, predictions, all_label_probs, cf
 

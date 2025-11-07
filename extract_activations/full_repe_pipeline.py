@@ -213,6 +213,7 @@ def unibias_main(model_name: str,
                  RepE_enabled: bool,
                  activations_name: str,
                  intervention_layers: list[int],
+                 operator: str = "linear_comb",
                  resume: bool = False,
                  new_tokens: int = 10,
                  log_on_WB: bool = True):
@@ -258,8 +259,8 @@ def unibias_main(model_name: str,
     # evaluate performance
     final_acc, predictions, all_label_probs, cf = ICL_evaluation(model, tokenizer, device, prompt_list, test_labels, 
                                                     gt_ans_ids_list, eval_dataset_name, 
-                                                    repE=RepE_enabled, activations_art_name=activations_name,
-                                                    gen_tokens=new_tokens, intervention_layers=intervention_layers,                                           resume=resume)
+                                                    repE=RepE_enabled, activations_art_name=activations_name, operator=operator,
+                                                    gen_tokens=new_tokens, intervention_layers=intervention_layers, resume=resume)
 
     if log_on_WB:
         L.log_evaluation_run( model_name=model_name,
@@ -273,6 +274,7 @@ def unibias_main(model_name: str,
                             prompt_list=prompt_list,
                             confusion_matrix=cf,
                             activations_artifact_name=activations_name,
+                            operator = operator,
                             intervention_layers=intervention_layers,
                             control_method=control_method,
                             block_name=block_name
@@ -298,6 +300,7 @@ def RepE_evaluation(
     eval_dataset_name: str,
     eval_num_shot: int,
     eval_intervention_layers: list[int],
+    eval_operator: str = "linear_comb",
     training_dataset_num_shot: int = 0,
     training_max_ans_tokens: int = 5,
     training_logits_step: int = 0,
@@ -368,6 +371,7 @@ def RepE_evaluation(
                  RepE_enabled=True,
                  resume=eval_resume,
                  activations_name=activations_art_name,
+                 operator=eval_operator,
                  intervention_layers=eval_intervention_layers,
                  log_on_WB=True
                  )

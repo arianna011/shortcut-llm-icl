@@ -166,6 +166,7 @@ def log_evaluation_run(
     prompt_list: list[str],
     confusion_matrix: np.ndarray,
     activations_artifact_name: Optional[str] = None,
+    operator: str = "linear_comb",
     intervention_layers: Optional[list[int]] = None,
     control_method: Optional[str] = None,
     block_name: Optional[str] = None,
@@ -188,9 +189,10 @@ def log_evaluation_run(
         first_l, last_l = intervention_layers[0], intervention_layers[-1]
         run_name += f'_layers_{first_l}_{last_l}'
         run_name += f'_activations_{activations_artifact_name}'
+        run_name += f'_{operator}'
 
         config.update({"intervention_layers": intervention_layers, "control_method": control_method, 
-                       "block_name": block_name, "activations": activations_artifact_name})  
+                       "block_name": block_name, "activations": activations_artifact_name, "operator": operator})  
     else:
         run_name += f'_baseline'
 
