@@ -192,21 +192,11 @@ These representations are then used as input to the specific \textit{RepReader} 
 
 The former is an unsupervised technique that requires only contrastive hidden states as input. It computes the difference between paired representations to obtain relative hidden states and then extracts the desired number of principal components from the resulting data for each layer. The first principal component (i.e. the direction explaining the greatest variance in the data) is hypothesized to correspond to the latent function being elicited. ClusterMean, on the other hand, is a supervised method that requires class labels (clean or dirty) of each hidden-state representation. It clusters the representations into two groups, computes the mean vector of each cluster to obtain class representatives, and then defones the latent directin as the difference between the positive (dirty) and negative (clean) groups.\\
 
-Therefore, both methods produce a set of directions $\{ V_l \}_{l \in layers}$, where $ V_l $ is a vector of size $(hidden dimension)$ representing the latent concept or function to be extracted, referred to as the \textit{reading vector}. In addition, as already mentioned, both methods use the training labels to estimate a sign $S_l$ for each layer $l$, determining whether shortcut representations tend to lie on the high-value or low-value side of each direction.\\
-
-
-
-    % repreading pipeline from figure
-    % repreaders types
-    % how output can be used for shortcut detection
-
-
+Therefore, both methods produce a set of directions $\{ V_l \}_{l \in layers}$, where $ V_l $ is a vector of size \textit{(hidden dimension)} representing the latent concept or function to be extracted, referred to as the \textit{reading vector}. In addition, as already mentioned, both methods use the training labels to estimate a sign $S_l$ for each layer $l$, determining whether shortcut representations tend to lie on the high-value or low-value side of each direction. By leveraging these sets, a simple shortcut detector can be constructed: given an arbitrary input text, it is fed to the target LLM, the corresponding hidden-state representations are extracted, projected onto the directions $\{ V_l \}_{l \in layers}$ via matrix multiplication, and then multiplied by the corresponding signs $\{ S_l \}_{l \in layers}$. The resulting projection values provide an estimate of the degree of shortcut reliance exhibited by the model at each layer and token position.
 
 \subsection{Shortcut mitigation}
 
-\subsection{Design discussion}
 
-% design discussion (assumptions, expectations, limitations)
 
 \begin{sidewaysfigure}
     \centering
@@ -215,6 +205,7 @@ Therefore, both methods produce a set of directions $\{ V_l \}_{l \in layers}$, 
     \label{fig:myrepeframework}
 \end{sidewaysfigure}
 
-
+\subsection{Design discussion}
+% assumptions, expectations, limitations
 
 \end{document}
