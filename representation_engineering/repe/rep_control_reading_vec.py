@@ -92,7 +92,9 @@ class WrappedBlock(torch.nn.Module):
                 return current + controller * sign
         elif operator == 'projection':
             def op(current, controller):
-                raise NotImplementedError
+                v = controller
+                proj_coeff = (current * v).sum(dim=-1, keepdim=True) / (v.norm(dim=-1, keepdim=True) ** 2)
+                return current - proj_coeff * v
         else:
             raise NotImplementedError(f"Operator {operator} not implemented.")
         self.operator = op

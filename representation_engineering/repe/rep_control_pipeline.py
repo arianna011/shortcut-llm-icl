@@ -22,11 +22,11 @@ class RepControlPipeline(TextGenerationPipeline):
 
         super().__init__(model=model, tokenizer=tokenizer, **kwargs)
    
-    def __call__(self, text_inputs, activations=None, max_new_tokens=10, **kwargs):
+    def __call__(self, text_inputs, activations=None, max_new_tokens=10, operator="linear_comb", **kwargs):
 
         if activations is not None:
             self.wrapped_model.reset()
-            self.wrapped_model.set_controller(self.layers, activations, self.block_name)
+            self.wrapped_model.set_controller(self.layers, activations, self.block_name, operator=operator)
 
         inputs = self.tokenizer(text_inputs, return_tensors="pt").to(self.model.device)
 
