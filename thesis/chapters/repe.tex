@@ -96,6 +96,7 @@ In particular, to construct the input for PCA:
 To use the Reading Vector in downstream analysis on a test set $S_{\text{test}}$, hidden states $H_{\text{test}}$ are extracted and projected onto $v$ via dot product, obtaining scalar scores that are intended to quantify the amount of the target concept or function encoded in those representations.
 
 \subsection{RepControl}
+\label{subsec:repcontrol}
 
 While \textit{RepReading} provides a means to extract a model's internal representations of specific concepts, \textit{RepControl} enables the manipulation of these representations at inference time, allowing to amplify or suppress the neural activity related to a given concept or function, without updating any of the model's parameters. In the case of safety-relevant concepts, such as "bias" or "toxicity", RepControl could help mitigate the risks associated with harmful or undesired LLM generations.\\
 
@@ -113,9 +114,9 @@ The authors of RepE \citep{zou2025representationengineeringtopdownapproach} intr
 \noindent\textbf{Operators.} Depending on the specific control objective, different operations can be performed to transform the original model representations $R$ into controlled representations $R'$ using a generic controller $v$:
 
 \begin{itemize}
-    \item \textit{Linear Combination}: \begin{equation} R' = R \pm v \end{equation} In this case, the behavior encoded by $v$ can be either stimulated or suppressed;
-    \item \textit{Piece-wise Operation}: \begin{equation}R' = R + sign(R^Tv)v \end{equation} Here, the neural activity along the direction of $v$ is conditionally amplified based on its alignment with the representation;
-    \item \textit{Projection}: \begin{equation}R' = R - \frac{R^T v}{\|v\|^2} v\end{equation} In this case, the component of the representation aligning with $v$ is removed by projecting it out.
+    \item \textit{Linear Combination}: \begin{equation} \label{eq:linearcomb}R' = R \pm v \end{equation} In this case, the behavior encoded by $v$ can be either stimulated or suppressed.
+    \item \textit{Piece-wise Operation}: \begin{equation} \label{eq:piecewise} R' = R + sign(R^Tv)v \end{equation} Here, the neural activity along the direction of $v$ is conditionally amplified based on its alignment with the representation.
+    \item \textit{Projection}: \begin{equation} \label{eq:projection} R' = R - \frac{R^T v}{\|v\|^2} v\end{equation} In this case, the component of the representation aligning with $v$ is removed by projecting it out.
 \end{itemize}
 
 
@@ -196,7 +197,7 @@ Therefore, both methods produce a set of directions $\{ V_l \}_{l \in layers}$, 
 
 \subsection{Shortcut mitigation}
 
-
+The latent directions corresponding to the \textit{shortcut reliance} function in the target LLM, extracted through RepReading methods (as explained in the previous section), can be leveraged to manipulate the model's hidden representations at inference time via RepControl techniques.\\
 
 \begin{sidewaysfigure}
     \centering
@@ -204,6 +205,18 @@ Therefore, both methods produce a set of directions $\{ V_l \}_{l \in layers}$, 
     \caption{Overview of the Representation Engineering (RepE) framework adapted to shortcut mitigation}
     \label{fig:myrepeframework}
 \end{sidewaysfigure}
+
+As shown in Figure \ref{fig:myrepeframework}, given an ICL setting for a chosen task with demonstrantions and queries drawn from an arbitrary NLP dataset, the original sets of hidden states $\{H_l\}_{l \in layers}$ produced by the LLM when processing the input and generating an answer (i.e. hidden states across all token positions in the input and output sequences) can be modified through the control methods described in Section \ref{subsec:repcontrol}. In particular, the \textit{Reading Vector} controller is employed in combination with all the operator types: \textit{linear combination}, \textit{piecewise operation} and \textit{projection}. These operators define how the hidden representations of the unmodified model interact with the latent directions $\{V_l\}_{l \in layers}$ and their corresponding signs $\{S_l\}_{l \in layers}$ obtained via RepReading, yielding new representations in which shortcut behavior is either amplified or suppressed depending on the sign of a coefficient $\alpha$ controlling the strength of the intervention. Formally, the modified hidden states $\{H'_l\}_{l \in layers}$ for the selected intervention layers can be computed by adapting Equations \ref{eq:linearcomb}, \ref{eq:piecewise} and \ref{eq:projection} as follows:
+
+\begin{itemize}
+    \item \textit{Linear Combination}: \begin{equation} H_l' = H_l + \alpha S_l V_l \end{equation} The new hidden states at layer $l$ are obtained by adding to the original representations a signed version of the reading vector $V_l$, scaled by $\alpha$, which may take both positive and negative values to respectively increase or decrease shortcut activation.
+    \item \textit{Piece-wise Operation}: \begin{equation}H_l' = H_l + \alpha S_l\ sign(H_l^TV_l)V_l \end{equation}  Here, the direction of the update depends on the alignment between the hidden states $H_l$ and the reading vector $V_l$, introducing a conditional modulation of the shortcut activation.
+    \item \textit{Projection}: \begin{equation}H_l' = H_l + (I - \frac{V_lV_l^T}{\|V_l\|^2}) H_l\end{equation} where $I$ is the identity matrix. In this case, the component of $H_l$ aligned with the shortcut direction $V_l$ is projected out, effectively removing the shortcut-related contribution from the representation.
+\end{itemize}
+
+After injecting these steered actovations in the target LLM, the model can be evaluated on the given ICL task to assess how the RepControl intervention influences its prediction behavior.  
+This evaluation involves analyzing the predicted label probabilities and comparing the accuracy of the baseline and controlled models on the same test sets.  
+For shortcut mitigation, the reading vectors extracted via PCA and ClusterMean from contrastive data containing or lacking shortcut cues are used to suppress shortcut reliance by applying a negative $\alpha$ coefficient in the linear combination and piecewise operation settings, or by removing the shortcut component altogether via the projection operator.
 
 \subsection{Design discussion}
 % assumptions, expectations, limitations
