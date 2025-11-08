@@ -211,7 +211,7 @@ As shown in Figure \ref{fig:myrepeframework}, given an ICL setting for a chosen 
 \begin{itemize}
     \item \textit{Linear Combination}: \begin{equation} H_l' = H_l + \alpha S_l V_l \end{equation} The new hidden states at layer $l$ are obtained by adding to the original representations a signed version of the reading vector $V_l$, scaled by $\alpha$, which may take both positive and negative values to respectively increase or decrease shortcut activation.
     \item \textit{Piece-wise Operation}: \begin{equation}H_l' = H_l + \alpha S_l\ sign(H_l^TV_l)V_l \end{equation}  Here, the direction of the update depends on the alignment between the hidden states $H_l$ and the reading vector $V_l$, introducing a conditional modulation of the shortcut activation.
-    \item \textit{Projection}: \begin{equation}H_l' = H_l + (I - \frac{V_lV_l^T}{\|V_l\|^2}) H_l\end{equation} where $I$ is the identity matrix. In this case, the component of $H_l$ aligned with the shortcut direction $V_l$ is projected out, effectively removing the shortcut-related contribution from the representation.
+    \item \textit{Projection}: \begin{equation}H_l' = \left( I - \frac{V_lV_l^T}{\|V_l\|^2}\right) H_l\end{equation} where $I$ is the identity matrix. In this case, the component of $H_l$ aligned with the shortcut direction $V_l$ is projected out, effectively removing the shortcut-related contribution from the representation.
 \end{itemize}
 
 After injecting these steered actovations in the target LLM, the model can be evaluated on the given ICL task to assess how the RepControl intervention influences its prediction behavior.  
@@ -219,6 +219,24 @@ This evaluation involves analyzing the predicted label probabilities and compari
 For shortcut mitigation, the reading vectors extracted via PCA and ClusterMean from contrastive data containing or lacking shortcut cues are used to suppress shortcut reliance by applying a negative $\alpha$ coefficient in the linear combination and piecewise operation settings, or by removing the shortcut component altogether via the projection operator.
 
 \subsection{Design discussion}
-% assumptions, expectations, limitations
+
+The proposed framework for shortcut detection and mitigation through Representation Engineering (RepE) is based on several underlying assumptions regarding the internal representations of LLMs and their relation to observable behaviors.  
+First, it assumes that shortcut reliance corresponds to consistent and linearly separable activation patterns within the model’s hidden states, such that it is possible to identify a latent direction that represents this mechanism.  
+This assumption is supported by prior work showing that abstract properties such as honesty, bias, or sentiment can emerge as approximately linear features in LLM representation spaces \citep{zou2025representationengineeringtopdownapproach}.  
+Nevertheless, shortcut behavior may not always be strictly linear, and complex non-linear interactions between attention and feed-forward model components could make certain forms of shortcut reliance harder to isolate through purely linear methods like PCA or ClusterMean.\\
+
+A second and particularly critical assumption concerns the quality and construction of the data fed into the RepReading phase.  
+The method relies on contrastive pairs of inputs that should differ only in the presence or absence of a shortcut cue, while preserving identical semantic and syntactic content. Such carefully controlled data is essential for ensuring that the latent directions extracted truly reflect shortcut-related mechanisms rather than confounding linguistic or contextual factors: poorly designed pairs may yield weak or noisy representations of the intended shortcut direction. However, datasets of this kind are still scarce: existing NLP benchmarks rarely include explicit shortcut annotations or systematically paired “clean” and “dirty” examples. As a result, constructing suitable contrastive datasets often requires manual design or synthetic data generation, which introduces additional bias and limits large-scale applicability.\\
+
+Another key assumption is that manipulating hidden-state representations 
+with additive or projective operations (such as \textit{RepControl}) yields interpretable and causally meaningful changes in model behavior.  
+While previous experiments indicate that such interventions can produce predictable effects, there is no formal guarantee that these modifications act exclusively on the intended feature, as latent directions in high-dimensional spaces may encode multiple entangled concepts.  
+This limitation underscores the importance of complementary interpretability analyses to disentangle overlapping representational factors.\\
+
+In terms of design trade-offs, the proposed approach deliberately avoids parameter updates and additional training, prioritizing interpretability and computational efficiency.  
+The resulting method is lightweight and transferable across models and tasks, but may achieve lower precision than optimization-based mitigation strategies.  
+Its effectiveness also depends on the representational depth of the selected layers and the linear separability of the shortcut phenomenon under analysis.\\
+
+Overall, the main goal of this work is to provide an interpretable and training-free framework to analyze and mitigate shortcut reliance directly within the representational space of LLMs.
 
 \end{document}
