@@ -6,16 +6,45 @@
 \chapter{Experimental Evaluation}
 
 Several experiments were conducted to evaluate the effectiveness of the proposed RepE-based framework for shortcut detection and mitigation.  
-Section~\ref{sec:setup} describes the experimental setup, including the involved models, datasets and implementation details, while Section~\ref{sec:results} presents and discusses the obtained results. The experiments aim to determine whether latent shortcut directions can be reliably extracted from LLM representations and whether their manipulation through RepControl leads to measurable improvements in model behavior under In-Context Learning (ICL).
+Section~\ref{sec:setup} describes the experimental setup, while Section~\ref{sec:results} presents and discusses the obtained results. The experiments aim to determine whether latent shortcut directions can be reliably extracted from LLM representations and whether their manipulation through RepControl leads to measurable improvements in model behavior under In-Context Learning (ICL).
 
 \section{Experimental Setup}
 \label{sec:setup}
 
-\subsection{Models}
-\subsection{Datasets}
-\subsection{Prompt Design and ICL Configuration}
-% setup ----
-% model
+In order to evaluate the framework proposed in Section \ref{sec:method}, two main objectives were considered:
+
+\begin{itemize}
+    \item to assess whether shortcut-related mechanisms can be identified within the model’s latent space, thus evaluating \textit{shortcut detection};
+    \item to test the effectiveness of the \textit{shortcut mitigation} procedure based on RepControl interventions, determining whether steering the internal representations of LLMs can effectively reduce shortcut-driven behavior under ICL.
+\end{itemize} 
+
+Accordingly, this section describes the experimental configuration adopted for both stages, detailing the models, datasets, prompt design and implementation settings used in the analysis.\\
+
+\noindent \textbf{Models.} All experiments were carried out using the \textit{Mistral 7B Instruct v0.1} model.\footnote{Available at \url{https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1}}  
+This choice was motivated by both methodological and practical considerations: Mistral 7B Instruct v0.1 is a decoder-only transformer with open weights, which allows direct access to the model’s internal hidden states, an essential requirement for applying the RepE-based framework. Moreover, despite its moderate size, it demonstrates strong instruction-following and reasoning capabilities, making it representative of modern LLMs while remaining computationally efficient. From a practical perspective, the experiments were conducted on free Google Colab environments, where hardware memory is limited. To enable inference and activation extraction within these constraints, the model was loaded in 4-bit precision using the \textit{bitsandbytes} quantization library. This approach significantly reduced GPU memory usage with minimal degradation in representational fidelity, allowing the experiments to be performed efficiently without altering the qualitative behavior of the model.\\
+
+Mistral 7B Instruct v0.1 follows the transformer-decoder architecture introduced by \textit{Mistral AI}, featuring 32 transformer layers and approximately 7.3 billion parameters.  
+Each layer consists of a multi-head self-attention block followed by a feed-forward (MLP) block, both wrapped with \textit{RMSNorm} normalization instead of the standard LayerNorm, improving numerical stability in low-precision inference.  
+The attention mechanism uses a \textit{Grouped Query Attention} (GQA) configuration with 8 query heads per group to enhance inference efficiency.  
+Positional information is encoded using \textit{rotary positional embeddings} (RoPE), and the model employs \textit{SwiGLU} activation functions in the feed-forward layers.  
+The hidden dimension is 4096, with an intermediate feed-forward dimension of 14336 and a context window of up to 8192 tokens \citep{jiang2023mistral7b}.\\
+
+For the purpose of this work, hidden-state representations were extracted after each RMSNorm layer at the output of the transformer blocks.\footnote{Specifically, the hidden representations referred to as $\{H_l\}_{l \in layers}$ correspond to tensors of size $(batch\ size, sequence\ length, hidden\ dimension)$, where the first tensor represents the embedding layer output and each subsequent tensor represents the post-layer activations of the corresponding transformer block.
+}
+These activations correspond to the contextual embeddings used internally by the model to predict the next token and thus provide the representational substrate targeted by the RepE framework.  
+Accessing layerwise activations in this way enables the identification and manipulation of latent directions corresponding to shortcut-related mechanisms.\\
+
+Although the Mistral 7B architecture shares many similarities with LLaMA 2 models (such as the use of rotary positional embeddings and decoder-only transformer blocks), it introduces several design improvements that make it particularly suitable for this study.  
+First, Mistral's GQA enables faster computation and lower GPU memory footprint during layerwise extraction and manipulation of activations. Second, as already mentioned, the use of RMSNorm offers better numerical stability when operating under low-precision quantization settings such as the 4-bit configuration adopted here.  
+Finally, empirical evaluations have shown that Mistral 7B consistently outperforms LLaMA 2 models of comparable size on most standard benchmarks \citep{jiang2023mistral7b}, suggesting that its latent representations are richer and more semantically structured, an advantageous property for analyzing shortcut mechanisms within the representation space. Overall, Mistral 7B Instruct v0.1 provides an effective balance between accessibility, interpretability, and representational richness for the study of shortcut detection and mitigation.
+
+
+
+% introduction detection vs mitigation testing
+
+%\subsection{Datasets}
+%\subsection{Prompt Design and ICL Configuration}
+
 % training dataset 
 % test dataset (size)
 % ICL configuration, method configurations
