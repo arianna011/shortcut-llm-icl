@@ -20,7 +20,9 @@ In order to evaluate the framework proposed in Section \ref{sec:method}, two mai
 
 Accordingly, this section describes the experimental configuration adopted for both stages, detailing the models, datasets, prompt design and implementation settings used in the analysis.\\
 
-\noindent \textbf{Models.} All experiments were carried out using the \textit{Mistral 7B Instruct v0.1} model.\footnote{Available at \url{https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1}}  
+\subsection{Models}
+
+All experiments were carried out using the \textit{Mistral 7B Instruct v0.1} model.\footnote{Available at \url{https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1}}  
 This choice was motivated by both methodological and practical considerations: Mistral 7B Instruct v0.1 is a decoder-only transformer with open weights, which allows direct access to the model’s internal hidden states, an essential requirement for applying the RepE-based framework. Moreover, despite its moderate size, it demonstrates strong instruction-following and reasoning capabilities, making it representative of modern LLMs while remaining computationally efficient. From a practical perspective, the experiments were conducted on free Google Colab environments, where hardware memory is limited. To enable inference and activation extraction within these constraints, the model was loaded in 4-bit precision using the \textit{bitsandbytes} quantization library. This approach significantly reduced GPU memory usage with minimal degradation in representational fidelity, allowing the experiments to be performed efficiently without altering the qualitative behavior of the model.\\
 
 Mistral 7B Instruct v0.1 follows the transformer-decoder architecture introduced by \textit{Mistral AI}, featuring 32 transformer layers and approximately 7.3 billion parameters.  
@@ -36,20 +38,89 @@ Accessing layerwise activations in this way enables the identification and manip
 
 Although the Mistral 7B architecture shares many similarities with LLaMA 2 models (such as the use of rotary positional embeddings and decoder-only transformer blocks), it introduces several design improvements that make it particularly suitable for this study.  
 First, Mistral's GQA enables faster computation and lower GPU memory footprint during layerwise extraction and manipulation of activations. Second, as already mentioned, the use of RMSNorm offers better numerical stability when operating under low-precision quantization settings such as the 4-bit configuration adopted here.  
-Finally, empirical evaluations have shown that Mistral 7B consistently outperforms LLaMA 2 models of comparable size on most standard benchmarks \citep{jiang2023mistral7b}, suggesting that its latent representations are richer and more semantically structured, an advantageous property for analyzing shortcut mechanisms within the representation space. Overall, Mistral 7B Instruct v0.1 provides an effective balance between accessibility, interpretability, and representational richness for the study of shortcut detection and mitigation.
+Finally, empirical evaluations have shown that Mistral 7B consistently outperforms LLaMA 2 models of comparable size on most standard benchmarks \citep{jiang2023mistral7b}, suggesting that its latent representations are richer and more semantically structured, an advantageous property for analyzing shortcut mechanisms within the representation space. Overall, Mistral 7B Instruct v0.1 provides an effective balance between accessibility, interpretability, and representational richness for the study of shortcut detection and mitigation.\\
+
+\subsection{Datasets and prompt design}
+
+Most of the conducted experiments are based on the \textit{Textual Entailment Recognition} (TER) task in Natural Language Processing (NLP).  
+Also known as \textit{Natural Language Inference} (NLI), TER is an application-independent task that consists in automatically determining whether a directional entailment relationship holds between two text fragments.  
+Given a \textit{premise} $P$ and a \textit{hypothesis} $H$, the goal is to decide whether $H$ is \textit{entailed} by $P$, that is, whether $H$ can be considered most likely true if $P$ is true.  
+The task can be formulated either as a binary classification problem, where text pairs are labeled as \textit{entailment} or \textit{non-entailment}, or as a three-way classification variant, where they are categorized as \textit{entailment}, \textit{contradiction}, or \textit{neutral}. For example, given the following prompt:
+\begin{quote}
+\textit{Premise:} A boy is playing in the garden.\\
+\textit{Hypothesis:} There is a boy in the garden.\\
+\textit{Classification:} ?
+\end{quote}
+the correct label is \textit{entailment}.  Conversely, for:
+\begin{quote}
+\textit{Premise:} Luna is barking loudly.\\
+\textit{Hypothesis:} Luna is human.\\
+\textit{Classification:} ?
+\end{quote}
+the correct label is \textit{contradiction}.\\
+
+The TER task can be seen as a general evaluation tool for testing the inference capabilities of NLP systems, which all share the need to process and understand natural language, and serves as a unifying framework for reformulating a variety of NLP tasks. For example, \textit{question answering} can be recast as TER by converting each candidate answer into a hypothesis formed from the question-answer pair and ranking them according to the degree of entailment with respect to the given premise. Similarly, in \textit{text summarization} and \textit{machine translation}, candidate summaries or translations can be treated as hypotheses whose quality is estimated by the extent to which they are entailed by the original text \citep{survey2022}.  
+Furthermore, TER is particularly well-suited for the present work since it is associated with several well-documented and easily observable shortcut phenomena (e.g. lexical overlap, negation cues, position bias), making it an ideal testbed for studying shortcut detection and mitigation via the proposed RepE-based framework.\\
+
+\noindent \textbf{Training Datasets.} The training datasets referred to as "NLP Shortcut Dataset" in Figure \ref{fig:myrepeframework} were thus taken from the \textit{ShortcutSuite} repository \citep{yuan2024llmsovercomeshortcutlearning}, which provides TER instances augmented with different types of injected shortcuts. In particular, the datasets selected for this work are those derived from the Multi-Genre Natural Language Inference (MNLI) corpus \citep{williams2018broadcoveragechallengecorpussentence}, a 433k-example collection for three-way textual entaiment, spanning ten text genres across both spoken and written English (e.g. telephone speech, government documents, fiction). ShortcutSuite uses a balanced subset of 3,000 premise-hypothesis pairs sampled from the MNLI development set to generate "shortcut-injected" alterations of the original text with the following shortcut types:
+
+\begin{itemize}
+    \item \textbf{\textit{Negation}}: Random tautologies containing negation words are appended to the original hypothesis to test whether LLMs are overly sensitive to the mere presence of negation, even when it does not change the underlying logical relationship.  
+    For example:
+    \begin{quote}
+        \small
+        \textit{Premise:} Children will enjoy the little steam train that loops around the bay to Le Crotoy in the summer.\\[4pt]
+        \textit{Hypothesis (clean):} There is a steam train looping around the bay to Le Crotoy.\\[4pt]
+        \textit{Hypothesis (dirty):} There is a steam train looping around the bay to Le Crotoy \textbf{and false is not true}. 
+    \end{quote} 
+    This corresponds to a form of \textit{Lexicon} shorcut (see Section \ref{sec:types_icl}).
+    \vspace{1em}
+
+    \item \textbf{\textit{Position}}: Tautological sentences are inserted at different positions within the hypothesis to evaluate whether the model relies on positional cues rather than semantic content. For instance:
+    \begin{quote}
+        \small
+        \textit{Premise (clean):} Also, the final rule is not intended to have any retroactive effect, and administrative procedures must be exhausted prior to any judicial challenge to the provisions of the rule.\\[4pt]
+        \textit{Premise (dirty):}  \textbf{Red is red and red is red and red is red and red is red and red is red.} Also, the final rule is not intended to have any retroactive effect, and administrative procedures must be exhausted prior to any judicial challenge to the provisions of the rule.\\[4pt]
+        \textit{Hypothesis:} The final rule isn't meant to have a retroactive effect.
+    \end{quote}
+    
+    \vspace{1em}
+    \item \textbf{\textit{Style}}: The original premise is paraphrased into a Bible-like style using the STRAP model, in order to test whether stylistic features influence model predictions independently of semantics. Example:
+    \begin{quote}
+        \small
+        \textit{Premise (clean):} “You and your friends are not welcome here,” said Severn.\\[4pt]
+        \textit{Premise (dirty):} \textbf{And Severn said unto him, Thou and thy friends are not welcome here, said he.}\\[4pt]
+        \textit{Hypothesis:} Severn said the people were not welcome there.
+    \end{quote}
+\end{itemize}
+
+These three shortcut types were chosen over the HANS-style shortcuts (\textit{Lexical Overlap}, \textit{Subsequence}, and \textit{Constituent}) included in ShortcutSuite because the RepE framework requires contrastive pairs where the clean and shortcut-injected examples correspond exactly to the same original instance.  
+Negation, Position, and Style were the only shortcut sets that explicitly preserve this linkage through shared identifiers across the provided tables, enabling the construction of aligned clean-dirty pairs needed for RepReading.\\
+
+Before being fed to the RepReader, each example was formatted using a simple zero-shot ICL prompt template containing the instruction \texttt{"Decide if the hypothesis is entailed by the premise"}. Below is a complete instance of a contrastive pair of prompts used to extract a latent shorcut direction.\\
+
+\begin{tcolorbox}[colback=white,colframe=green!50,boxrule=0.2pt,arc=2pt]
+    \texttt{USER: \textcolor{blue!50}{Decide if the hypothesis is entailed by the premise.}\\
+     \textcolor{blue!50}{Premise: Children will enjoy the little steam train that loops around the bay to Le Crotoy in the summer.}\\
+     \textcolor{blue!50}{Hypothesis: There is a steam train looping around the bay to Le Crotoy.}}\\
+    \texttt{ASSISTANT:} 
+\end{tcolorbox} 
+
+\begin{tcolorbox}[colback=white,colframe=green!50,boxrule=0.2pt,arc=2pt]
+    \texttt{USER: \textcolor{blue!50}{Decide if the hypothesis is entailed by the premise.}\\
+     \textcolor{blue!50}{Premise: Children will enjoy the little steam train that loops around the bay to Le Crotoy in the summer.}\\
+     \textcolor{blue!50}{Hypothesis: There is a steam train looping around the bay to Le Crotoy} \textcolor{red!50}{and false is not true.}} \\
+    \texttt{ASSISTANT:} 
+\end{tcolorbox} 
+
+\vspace{1em}
+
+\noindent Differently from the original RepE experiments \citep{zou2025representationengineeringtopdownapproach}, in this work the stimuli for the \textit{function} extraction do not rely on model-generated continuations guided by differentiated instructions (e.g. "answer like an honest person" vs "answer like a dishonest person").  
+Instead, the task instances themselves serve as stimuli: the model is not required to answer, but only to process the input prompts, thereby generating hidden-state activations that ideally differ between clean and shortcut-augmented versions of the same example.
 
 
+% test datasets -> Unibias, ICL configurations, RTE and MNLI, test sizes, ood vs iid testing, natural shortcut presence
 
-% introduction detection vs mitigation testing
-
-%\subsection{Datasets}
-%\subsection{Prompt Design and ICL Configuration}
-
-% training dataset 
-% test dataset (size)
-% ICL configuration, method configurations
-% shortcut suite method
-% iid vs ood testing
 
 \section{Results and Analysis}
 \label{sec:results}
