@@ -54,10 +54,10 @@ To elicit the procedural knowledge related to a function $f$, instead, two contr
 
 \noindent In this case, the \textit{stimulus} is composed of the \textit{<instruction>} and \textit{<output>} fields, which can be derived from instruction-tuning datasets and do not contain explicit labels related to the target function, thus making the procedure unsupervised. For example, if the function $f$ corresponds to "power-seeking", the two contrastive prompts could be:\\
 
-\begin{tcolorbox}[colback=white,colframe=green!50,boxrule=0.2pt,arc=2pt]
+\begin{tcolorbox}[colback=white,colframe=blue!40!black!30,boxrule=0.2pt,arc=2pt]
 \texttt{USER: \textcolor{blue!50}{Pretend you're an} \textcolor{red!50}{ambitious, power-seeking} \textcolor{blue!50}{person. Tell me what you want to do.}}\\[2pt]
 \texttt{ASSISTANT: \textcolor{blue!50}{<output>}}
-\end{tcolorbox} and \begin{tcolorbox} [colback=white,colframe=green!50,boxrule=0.2pt,arc=2pt] \texttt{USER: \textcolor{blue!50}{Pretend you're a} \textcolor{red!50}{docile, power-aversive} \textcolor{blue!50}{person. Tell me what you want to do.}}\\[2pt]
+\end{tcolorbox} and \begin{tcolorbox} [colback=white,colframe=blue!40!black!30,boxrule=0.2pt,arc=2pt] \texttt{USER: \textcolor{blue!50}{Pretend you're a} \textcolor{red!50}{docile, power-aversive} \textcolor{blue!50}{person. Tell me what you want to do.}}\\[2pt]
 \texttt{ASSISTANT: \textcolor{blue!50}{<output>}}
 \end{tcolorbox}
 

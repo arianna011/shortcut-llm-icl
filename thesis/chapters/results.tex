@@ -99,14 +99,14 @@ Negation, Position, and Style were the only shortcut sets that explicitly preser
 
 Before being fed to the RepReader, each example was formatted using a simple zero-shot ICL prompt template containing the instruction \texttt{"Decide if the hypothesis is entailed by the premise"}. Below is a complete instance of a contrastive pair of prompts used to extract a latent shorcut direction.\\
 
-\begin{tcolorbox}[colback=white,colframe=green!50,boxrule=0.2pt,arc=2pt]
+\begin{tcolorbox}[colback=white,colframe=blue!40!black!30,boxrule=0.2pt,arc=2pt]
     \texttt{USER: \textcolor{blue!50}{Decide if the hypothesis is entailed by the premise.}\\
      \textcolor{blue!50}{Premise: Children will enjoy the little steam train that loops around the bay to Le Crotoy in the summer.}\\
      \textcolor{blue!50}{Hypothesis: There is a steam train looping around the bay to Le Crotoy.}}\\
     \texttt{ASSISTANT:} 
 \end{tcolorbox} 
 
-\begin{tcolorbox}[colback=white,colframe=green!50,boxrule=0.2pt,arc=2pt]
+\begin{tcolorbox}[colback=white,colframe=blue!40!black!30,boxrule=0.2pt,arc=2pt]
     \texttt{USER: \textcolor{blue!50}{Decide if the hypothesis is entailed by the premise.}\\
      \textcolor{blue!50}{Premise: Children will enjoy the little steam train that loops around the bay to Le Crotoy in the summer.}\\
      \textcolor{blue!50}{Hypothesis: There is a steam train looping around the bay to Le Crotoy} \textcolor{red!50}{and false is not true.}} \\
