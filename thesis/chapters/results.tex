@@ -116,14 +116,67 @@ Before being fed to the RepReader, each example was formatted using a simple zer
 \vspace{1em}
 
 \noindent Differently from the original RepE experiments \citep{zou2025representationengineeringtopdownapproach}, in this work the stimuli for the \textit{function} extraction do not rely on model-generated continuations guided by differentiated instructions (e.g. "answer like an honest person" vs "answer like a dishonest person").  
-Instead, the task instances themselves serve as stimuli: the model is not required to answer, but only to process the input prompts, thereby generating hidden-state activations that ideally differ between clean and shortcut-augmented versions of the same example.
+Instead, the task instances themselves serve as stimuli: the model is not required to answer, but only to process the input prompts, thereby generating hidden-state activations that ideally differ between clean and shortcut-augmented versions of the same example.\\
 
 
-% test datasets -> Unibias, ICL configurations, RTE and MNLI, test sizes, ood vs iid testing, natural shortcut presence
+\noindent \textbf{Evaluation Datasets.} The datasets employed for evaluating the proposed methodology (referred to as "NLP Dataset" in Figure \ref{fig:myrepeframework}) are standard NLP benchmarks for the TER task. In particular, in addition to the already cited MNLI, the Recognizing Textual Entailment (RTE) dataset from the GLUE benchmark is used. RTE consists of sentence pairs for entailment vs. not-entailment classification, drawn from the annual RTE challenges held between 2005 and 2011, and built primarily from news and Wikipedia text. While MNLI serves as an \textit{in-distribution} testbed for shortcut detection and mitigation, given that the shortcut training datasets are derived from it, RTE provides an opportunity to test whether the proposed approach generalizes to \textit{naturally occurring} shortcuts in a standard entailment benchmark.\\
+
+For the practical evaluation, the UniBias framework \citep{zhou2024unibiasunveilingmitigatingllm} was used to construct ICL prompts for each test instance.  
+In a $k$-shot setting, the ICL context is built as follows:
+
+\begin{itemize}
+    \item when $k = 0$, the prompt consists of a dataset-specific task instruction (e.g. for MNLI: \textit{"Given the premise, are we justified in saying the hypothesis? yes, no, or maybe?"}) followed by the test instance;
+    \item when $k > 0$, the prompt contains $k$ demonstration examples for each label class, randomly sampled from the dataset training split, followed by the test instance. No explicit task instruction is included in this setting.
+\end{itemize}
+
+For illustration, in a 1-shot setting, an actual RTE prompt seen by the model at test time may be:
+
+\begin{quote}
+\small
+\textit{Premise:} Former Prime Minister Rafik Hariri, also a prominent anti-Syria political figure, was killed in a suicide bombing in February last year, which led to rising anti-Syrian waves and the withdrawal of Syrian troops from Lebanon.\\
+\textit{Hypothesis:} Syrian troops have been withdrawn from Lebanon after the murder of Rafik Hariri.\\
+\textit{Answer: yes}
+
+\vspace{0.4em}
+
+\textit{Premise:} The organizers of the 15th International AIDS Conference, scheduled for next month in Bangkok, Thailand, on Saturday responded to press reports that a prominent hotel in Bangkok discriminated against HIV-positive visitors attending a different conference this month.\\
+\textit{Hypothesis:} HIV-positive visitors take part in the 15th International AIDS Conference.\\
+\textit{Answer: no}
+
+\vspace{0.4em}
+
+\textit{Premise:} Dana Reeve, the widow of the actor Christopher Reeve, has died of lung cancer at age 44, according to the Christopher Reeve Foundation.\\
+\textit{Hypothesis:} Christopher Reeve had an accident.\\
+\textit{Answer:}
+\end{quote}
+
+Given the exploratory nature of the experiments and the limited computational resources available, the test set sizes were kept modest.  
+Table \ref{tab:testsets} reports the test sets used in this work, along with their source splits and number of examples.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{l c c}
+\toprule
+\textbf{Name} & \textbf{Source} & \textbf{Size} \\
+\midrule
+MNLI & subset of MNLI \textit{validation matched} split & 500 \\
+RTE & RTE validation split & 277 \\
+\bottomrule
+\end{tabular}
+\vspace{6pt}
+\caption{Evaluation test sets used in this work.}
+\label{tab:testsets}
+\end{table}
+
+% EVENTUALMENTE AGGIUNGERE RIGHE TABELLA + DESCRIZIONE TEST SET AGGIUNTIVI
 
 
 \section{Results and Analysis}
 \label{sec:results}
+
+% experiments (maybe list experiment 1, 2 ecc?)
+% Weights and Bias logging
+% hyperparameter search con tabella iperparametri
 
 \subsection{Shortcut Detection Results}
 \subsection{Shortcut Mitigation Results}
