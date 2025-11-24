@@ -177,7 +177,7 @@ def log_combined_activations_artifact(
     art_names = []
     for dataset_art in dataset_artifact_names:
         artifact_name = get_activations_artifact_name(
-                dataset_art, direction_method, clean_instruction, dirty_instruction, shuffled_data)
+                dataset_art, coeff, direction_method, clean_instruction, dirty_instruction, shuffled_data)
         art_names.append(artifact_name)
 
     comb_art_name = get_combined_activations_artifact_name(art_names, aggregation_type_name)

@@ -158,7 +158,7 @@ def prepare_shortcut_activations(
             dataset_artifact = api.artifact(f"{L.WB_TEAM}/{L.WB_PROJECT_NAME}/{dataset_art_name}:latest")
         except wandb.CommError:
             dataset_artifact = None
-        print(f"Artifact {dataset_art_name} not found. Starting creation...")
+            print(f"Artifact {dataset_art_name} not found. Starting creation...")
         
         if not dataset_artifact or overwrite_df_artifact:
         # create a new dataset artifact
