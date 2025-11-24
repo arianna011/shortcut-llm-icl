@@ -430,6 +430,7 @@ def RepE_evaluation(
                                         overwrite_df_artifact=overwrite_df_artifact,
                                         dataset_name=training_dataset_name,
                                         shortcut_types=training_dataset_shortcut_types,
+                                        aggregation_type=shortcut_aggregation,
                                         num_samples=training_dataset_size,
                                         prompts_selec_method=training_dataset_sel_method,
                                         random_seed=training_dataset_random_seed, 
