@@ -164,7 +164,7 @@ RTE & RTE validation split & 277 \\
 \bottomrule
 \end{tabular}
 \vspace{6pt}
-\caption{Evaluation test sets used in this work.}
+\caption{Evaluation test sets used in this work}
 \label{tab:testsets}
 \end{table}
 
@@ -174,12 +174,20 @@ RTE & RTE validation split & 277 \\
 \section{Results and Analysis}
 \label{sec:results}
 
-% experiments (maybe list experiment 1, 2 ecc?)
-% Weights and Bias logging
+This section presents the results obtained from the experiments evaluating the RepE-based approach to shortcut detection and mitigation.  
+Shortcut detection (Section \ref{sec:detres}) is assessed qualitatively on selected test instances, while shortcut mitigation (Section \ref{sec:mitres}) is evaluated systematically across multiple hyperparameter configurations on different test sets (Table \ref{tab:testsets}).
+To support reliable tracking and reproducibility, all experiments were logged using the Weights \& Biases (W\&B) platform, which recorded both input configurations and output metrics.  
+In addition, the full sets of prompts and activation files used in each run were stored as artifacts, ensuring that every experiment can be reproduced precisely.  
+W\&B was also used to generate clear and organized visualizations of the results.
+
 % hyperparameter search con tabella iperparametri
 
 \subsection{Shortcut Detection Results}
+\label{sec:detres}
+
 \subsection{Shortcut Mitigation Results}
+\label{sec:mitres}
+
 \subsection{Qualitative Analysis}
 
 \subbib{}
