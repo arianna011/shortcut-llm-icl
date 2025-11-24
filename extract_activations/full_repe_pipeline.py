@@ -138,7 +138,7 @@ def prepare_shortcut_activations(
     api = wandb.Api()
     mul_shorts = False
     if isinstance(shortcut_types, list) and len(shortcut_types) > 1:
-        assert aggregation_type is not None, "An aggregation method must be provided to combine multiple shortcut types."
+        assert aggregation_type, "An aggregation method must be provided to combine multiple shortcut types."
         mul_shorts = True
         dataset_art_names = []
         act_list = []
@@ -362,7 +362,7 @@ def RepE_evaluation(
     overwrite_act_artifact: bool,
     training_dataset_name: str,
     training_dataset_size: int,
-    training_dataset_shortcut_type: str,
+    training_dataset_shortcut_types: Union[str, list[str]],
     training_dataset_sel_method: L.SelectionMethod,
     training_dataset_random_seed: int,
     activations_clean_instr: str,
@@ -374,6 +374,7 @@ def RepE_evaluation(
     eval_dataset_name: str,
     eval_num_shot: int,
     eval_intervention_layers: list[int],
+    shortcut_aggregation: ShortcutAggregation = None,
     eval_operator: str = "linear_comb",
     training_dataset_num_shot: int = 0,
     training_max_ans_tokens: int = 5,
@@ -385,20 +386,35 @@ def RepE_evaluation(
 
     api = wandb.Api()
 
-    training_dataset_art_name = L.get_dataset_artifact_name(
-        dataset_name=training_dataset_name,
-        size=training_dataset_size,
-        shortcut=training_dataset_shortcut_type,
-        selection_method=training_dataset_sel_method,
-        random_seed=training_dataset_random_seed)
-  
-    activations_art_name = L.get_activations_artifact_name(
-        dataset_artifact_name=training_dataset_art_name,
-        coeff=activations_alpha_coeff,
-        direction_method=activations_direction_method,
-        clean_instruction=activations_clean_instr,
-        dirty_instruction=activations_dirty_instr,
-        shuffled_data=activations_data_shuffle)
+    mul_shorts = False
+    if isinstance(training_dataset_shortcut_types, list) and len(training_dataset_shortcut_types)>1:
+        assert shortcut_aggregation, "An aggregation method must be provided to combine multiple shortcut types."
+        mul_shorts = True
+        train_dataset_art_names = []
+        act_art_names = []
+    
+    for shortcut_type in training_dataset_shortcut_types:
+        training_dataset_art_name = L.get_dataset_artifact_name(
+            dataset_name=training_dataset_name,
+            size=training_dataset_size,
+            shortcut=shortcut_type,
+            selection_method=training_dataset_sel_method,
+            random_seed=training_dataset_random_seed)
+        
+        activations_art_name = L.get_activations_artifact_name(
+            dataset_artifact_name=training_dataset_art_name,
+            coeff=activations_alpha_coeff,
+            direction_method=activations_direction_method,
+            clean_instruction=activations_clean_instr,
+            dirty_instruction=activations_dirty_instr,
+            shuffled_data=activations_data_shuffle)
+        
+        if mul_shorts:
+            train_dataset_art_names.append(training_dataset_art_name)
+            act_art_names.append(activations_art_name)       
+    
+    if mul_shorts:
+        activations_art_name = L.get_combined_activations_artifact_name(act_art_names, shortcut_aggregation.get_name())
     
     # check if the needed acrivations artifact already exists
     try:
@@ -409,27 +425,26 @@ def RepE_evaluation(
     
     if not activations_artifact or overwrite_act_artifact:
         # create a new activations artifact
-        prepare_shortcut_activations(
-                                    repo_path=repo_path,
-                                    drive_path=drive_path,
-                                    overwrite_df_artifact=overwrite_df_artifact,
-                                    dataset_name=training_dataset_name,
-                                    shortcut_type=training_dataset_shortcut_type,
-                                    num_samples=training_dataset_size,
-                                    prompts_selec_method=training_dataset_sel_method,
-                                    random_seed=training_dataset_random_seed, 
-                                    clean_instr=activations_clean_instr,
-                                    dirty_instr=activations_dirty_instr,
-                                    direction_method=activations_direction_method,
-                                    shuffle_data=activations_data_shuffle,
-                                    model_wrap=model_wrap,
-                                    alpha_coeff=activations_alpha_coeff,
-                                    num_shot=training_dataset_num_shot,
-                                    max_ans_tokens=training_max_ans_tokens,
-                                    model_temperature=training_model_temperature,
-                                    logits_step=training_logits_step,
-                                    batch_size=training_batch_size,
-                                    debug=training_debug)
+        prepare_shortcut_activations(   repo_path=repo_path,
+                                        drive_path=drive_path,
+                                        overwrite_df_artifact=overwrite_df_artifact,
+                                        dataset_name=training_dataset_name,
+                                        shortcut_types=training_dataset_shortcut_types,
+                                        num_samples=training_dataset_size,
+                                        prompts_selec_method=training_dataset_sel_method,
+                                        random_seed=training_dataset_random_seed, 
+                                        clean_instr=activations_clean_instr,
+                                        dirty_instr=activations_dirty_instr,
+                                        direction_method=activations_direction_method,
+                                        shuffle_data=activations_data_shuffle,
+                                        model_wrap=model_wrap,
+                                        alpha_coeff=activations_alpha_coeff,
+                                        num_shot=training_dataset_num_shot,
+                                        max_ans_tokens=training_max_ans_tokens,
+                                        model_temperature=training_model_temperature,
+                                        logits_step=training_logits_step,
+                                        batch_size=training_batch_size,
+                                        debug=training_debug)
                                         
         try:
             activations_artifact = api.artifact(f"{L.WB_TEAM}/{L.WB_PROJECT_NAME}/{activations_art_name}:latest")
