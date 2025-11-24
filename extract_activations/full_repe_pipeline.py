@@ -238,6 +238,7 @@ def prepare_shortcut_activations(
         L.log_combined_activations_artifact(
             activations_path=comb_activations_path,
             dataset_artifact_names=dataset_art_names,
+            aggregation_type_name=aggregation_type.get_name(),
             coeff=alpha_coeff,
             rep_token=rep_token,
             hidden_layers=hidden_layers,
