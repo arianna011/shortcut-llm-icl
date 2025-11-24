@@ -11,11 +11,53 @@ import subprocess
 import pandas as pd
 import torch
 import sys,subprocess
+from enum import Enum
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 from transformers import pipeline
 from representation_engineering import repe_pipeline_registry
+import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 repe_pipeline_registry()
 
+# define methods to combine the activations from multiple shortcut types
+class ShortcutAggregation(Enum):
+    NORMALIZED_SUM = "sum"
+
+    def get_name(self):
+        return self.value
+
+    def combine_activations(self, acts: list[dict[int, torch.Tensor]], hidden_layers:list[int]) -> dict[int, torch.Tensor]:
+       
+        if self is ShortcutAggregation.NORMALIZED_SUM:
+
+            comb_act = {}
+            for l in hidden_layers:
+                layer_dirs = []
+                # collect all directions for this layer
+                for act in acts:
+                    if l not in act:
+                        continue
+                    d = act[l]
+                    # normalize each direction
+                    d_norm = F.normalize(d, p=2, dim=-1)
+                    layer_dirs.append(d_norm)
+
+                # if no shortcut provided a dir for this layer, skip
+                if not layer_dirs:
+                    continue
+                # sum all normalized directions
+                stacked = torch.stack(layer_dirs, dim=0)  # (num_shortcuts, ...)
+                combined = stacked.sum(dim=0)
+
+                # normalize the final combined direction
+                combined = F.normalize(combined, p=2, dim=-1)
+                comb_act[l] = combined
+
+            return comb_act
+        
+        else:
+            raise NotImplementedError(f"{self} is not implemented.")
+        
 
 def prepare_shortcut_training_dataset(
     repo_path: str,
@@ -74,7 +116,7 @@ def prepare_shortcut_activations(
     drive_path: str,
     overwrite_df_artifact: bool,
     dataset_name: str,
-    shortcut_type: str,
+    shortcut_types: Union[str, list[str]],
     num_samples: int,
     prompts_selec_method: L.SelectionMethod,
     random_seed: int,
@@ -84,6 +126,7 @@ def prepare_shortcut_activations(
     model_wrap: BaseLLM,
     alpha_coeff: float,
     direction_method: str,
+    aggregation_type: ShortcutAggregation = None,
     rep_token: int = -1,
     num_shot: int = 0,
     max_ans_tokens: int = 5,
@@ -93,86 +136,117 @@ def prepare_shortcut_activations(
     debug: bool = False
 ):
     api = wandb.Api()
-    
-    dataset_art_name = L.get_dataset_artifact_name(
-        dataset_name=dataset_name,
-        size=num_samples,
-        shortcut=shortcut_type,
-        selection_method=prompts_selec_method,
-        random_seed=random_seed)
-    
-    # check if the needed dataset artifact already exists
-    try:
-      dataset_artifact = api.artifact(f"{L.WB_TEAM}/{L.WB_PROJECT_NAME}/{dataset_art_name}:latest")
-    except wandb.CommError:
-      dataset_artifact = None
-      print(f"Artifact {dataset_art_name} not found. Starting creation...")
-    
-    if not dataset_artifact or overwrite_df_artifact:
-       # create a new dataset artifact
-        prepare_shortcut_training_dataset(repo_path=repo_path,
-                                         dataset_name=dataset_name,
-                                         shortcut_type=shortcut_type,
-                                         num_samples=num_samples,
-                                         prompts_selec_method=prompts_selec_method,
-                                         random_seed=random_seed, model=model_wrap,
-                                         num_shot=num_shot, max_ans_tokens=max_ans_tokens,
-                                         model_temperature=model_temperature, logits_step=logits_step, debug=debug)
+    mul_shorts = False
+    if isinstance(shortcut_types, list) and len(shortcut_types) > 1:
+        assert aggregation_type is not None, "An aggregation method must be provided to combine multiple shortcut types."
+        mul_shorts = True
+        dataset_art_names = []
+        act_list = []
+        act_names_list = []
+
+    hidden_layers = list(range(-1, -model_wrap.model.config.num_hidden_layers, -1))
+    for shortcut_type in shortcut_types:
+        dataset_art_name = L.get_dataset_artifact_name(
+            dataset_name=dataset_name,
+            size=num_samples,
+            shortcut=shortcut_type,
+            selection_method=prompts_selec_method,
+            random_seed=random_seed)
+        
+        # check if the needed dataset artifact already exists
         try:
             dataset_artifact = api.artifact(f"{L.WB_TEAM}/{L.WB_PROJECT_NAME}/{dataset_art_name}:latest")
         except wandb.CommError:
             dataset_artifact = None
+        print(f"Artifact {dataset_art_name} not found. Starting creation...")
+        
+        if not dataset_artifact or overwrite_df_artifact:
+        # create a new dataset artifact
+            prepare_shortcut_training_dataset(repo_path=repo_path,
+                                            dataset_name=dataset_name,
+                                            shortcut_type=shortcut_type,
+                                            num_samples=num_samples,
+                                            prompts_selec_method=prompts_selec_method,
+                                            random_seed=random_seed, model=model_wrap,
+                                            num_shot=num_shot, max_ans_tokens=max_ans_tokens,
+                                            model_temperature=model_temperature, logits_step=logits_step, debug=debug)
+            try:
+                dataset_artifact = api.artifact(f"{L.WB_TEAM}/{L.WB_PROJECT_NAME}/{dataset_art_name}:latest")
+            except wandb.CommError:
+                dataset_artifact = None
+        
+        assert dataset_artifact, "Failure in dataset artifact retrieval"
+        df_entry = dataset_artifact.get_entry(f"{dataset_name}.json")  
+        local_df_path = df_entry.download() 
+        with open(local_df_path, "r") as f:
+            data = json.load(f)
+        df = pd.DataFrame(data)
+        train_data, train_labels = _format_data_nli(df, clean_instr, dirty_instr, shuffle_data)
+        rep_reading_pipeline = pipeline("rep-reading", model=model_wrap.model, tokenizer=model_wrap.tokenizer)
+
+        print("Training RepReader...")
+        shortcut_rep_reader = rep_reading_pipeline.get_directions(
+                                                        train_data,
+                                                        rep_token=rep_token,
+                                                        hidden_layers=hidden_layers,
+                                                        n_difference=1,
+                                                        train_labels=train_labels,
+                                                        direction_method=direction_method,
+                                                        batch_size=batch_size)
+        activations = {}
+        for layer in hidden_layers:
+                activations[layer] = torch.tensor(alpha_coeff * shortcut_rep_reader.directions[layer] * shortcut_rep_reader.direction_signs[layer]).to(model_wrap.model.device).half()
+
+        activations_art_name = L.get_activations_artifact_name(dataset_artifact_name=dataset_art_name,
+                                                                coeff=alpha_coeff,
+                                                                direction_method=direction_method, 
+                                                                clean_instruction=clean_instr,
+                                                                dirty_instruction=dirty_instr,
+                                                                shuffled_data=shuffle_data)
+        activations_path = os.path.join(drive_path, "activations", f"{activations_art_name}.pt")
+        torch.save(activations, activations_path)
+        print(f"Activations saved at {activations_path}")
+
+        description = "Activations generated during execution of full RepE pipeline"
+
+        L.log_activations_artifact(
+            activations_path=activations_path,
+            dataset_artifact_name=dataset_art_name,
+            coeff=alpha_coeff,
+            rep_token=rep_token,
+            hidden_layers=hidden_layers,
+            direction_method=direction_method,
+            clean_instruction=clean_instr,
+            dirty_instruction=dirty_instr,
+            shuffled_data=shuffle_data,
+            description=description
+            )
+        if mul_shorts:
+            dataset_art_names.append(dataset_art_name)
+            act_list.append(activations)
+            act_names_list.append(activations_art_name)
     
-    assert dataset_artifact, "Failure in dataset artifact retrieval"
-    df_entry = dataset_artifact.get_entry(f"{dataset_name}.json")  
-    local_df_path = df_entry.download() 
-    with open(local_df_path, "r") as f:
-        data = json.load(f)
+    if mul_shorts:
+        comb_acts = aggregation_type.combine_activations(act_list, hidden_layers)
+        comb_acts_art_name = L.get_combined_activations_artifact_name(act_names_list, aggregation_type.get_name())
+        comb_activations_path = os.path.join(drive_path, "activations", f"{comb_acts_art_name}.pt")
+        torch.save(comb_acts, comb_activations_path)
+        print(f"Combined activations saved at {comb_activations_path}")
 
-    df = pd.DataFrame(data)
-    train_data, train_labels = _format_data_nli(df, clean_instr, dirty_instr, shuffle_data)
-    rep_reading_pipeline = pipeline("rep-reading", model=model_wrap.model, tokenizer=model_wrap.tokenizer)
-    hidden_layers = list(range(-1, -model_wrap.model.config.num_hidden_layers, -1))
+        description = "Combined activations generated during execution of full RepE pipeline"
 
-    print("Training RepReader...")
-    shortcut_rep_reader = rep_reading_pipeline.get_directions(
-                                                    train_data,
-                                                    rep_token=rep_token,
-                                                    hidden_layers=hidden_layers,
-                                                    n_difference=1,
-                                                    train_labels=train_labels,
-                                                    direction_method=direction_method,
-                                                    batch_size=batch_size)
-    activations = {}
-    for layer in hidden_layers:
-        activations[layer] = torch.tensor(alpha_coeff * shortcut_rep_reader.directions[layer] * shortcut_rep_reader.direction_signs[layer]).to(model_wrap.model.device).half()
-    
-    # log the activations file
-    activations_art_name = L.get_activations_artifact_name(dataset_artifact_name=dataset_art_name,
-                                                           coeff=alpha_coeff,
-                                                           direction_method=direction_method, 
-                                                           clean_instruction=clean_instr,
-                                                           dirty_instruction=dirty_instr,
-                                                           shuffled_data=shuffle_data)
-    activations_path = os.path.join(drive_path, "activations", f"{activations_art_name}.pt")
-    torch.save(activations, activations_path)
-    print(f"Activations saved at {activations_path}")
-
-    description = "Activations generated during execution of full RepE pipeline"
-
-    L.log_activations_artifact(
-       activations_path=activations_path,
-       dataset_artifact_name=dataset_art_name,
-       coeff=alpha_coeff,
-       rep_token=rep_token,
-       hidden_layers=hidden_layers,
-       direction_method=direction_method,
-       clean_instruction=clean_instr,
-       dirty_instruction=dirty_instr,
-       shuffled_data=shuffle_data,
-       description=description
-    )
-    
+        L.log_combined_activations_artifact(
+            activations_path=comb_activations_path,
+            dataset_artifact_names=dataset_art_names,
+            coeff=alpha_coeff,
+            rep_token=rep_token,
+            hidden_layers=hidden_layers,
+            direction_method=direction_method,
+            clean_instruction=clean_instr,
+            dirty_instruction=dirty_instr,
+            shuffled_data=shuffle_data,
+            description=description
+            )
 
 def _get_selection_condition(sel_method: L.SelectionMethod, shortcut_type: str):
    

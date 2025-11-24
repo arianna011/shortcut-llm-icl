@@ -45,7 +45,14 @@ def get_activations_artifact_name(
 
     return f'coeff_{coeff}{shuffle_str}{instr_str}_{direction_method}_{dataset_artifact_name}'
     
-
+def get_combined_activations_artifact_name(
+        activations_artifacts_names: list[str],
+        aggregation_type_name: str
+    ):
+        s = aggregation_type_name 
+        for act_name in activations_artifacts_names:
+            s += "_" + act_name
+        return s
 
 def log_dataset_artifact(
     dataset: Union[str,pd.DataFrame],
@@ -150,6 +157,64 @@ def log_activations_artifact(
     run.log_artifact(artifact)
     run.finish()
     print(f"✅ Logged activation artifact: {artifact_name}")
+
+
+def log_combined_activations_artifact(
+        activations_path: str,
+        dataset_artifact_names: list[str],
+        aggregation_type_name: str,
+        coeff: float,
+        rep_token: int,
+        hidden_layers: list[int],
+        direction_method: str,
+        clean_instruction: str,
+        dirty_instruction: str, 
+        shuffled_data: bool = True,
+        metadata: Optional[Dict[str, Any]] = None,
+        description: Optional[str] = None
+    ):
+        
+    art_names = []
+    for dataset_art in dataset_artifact_names:
+        artifact_name = get_activations_artifact_name(
+                dataset_art, direction_method, clean_instruction, dirty_instruction, shuffled_data)
+        art_names.append(artifact_name)
+
+    comb_art_name = get_combined_activations_artifact_name(art_names, aggregation_type_name)
+
+    run = wandb.init(project=WB_PROJECT_NAME, name=f"log_{comb_art_name}")
+    dataset_metadata = []
+    dataset_artifacts = []
+    for dataset in dataset_artifact_names:
+        dataset_artifact = run.use_artifact(f"{WB_TEAM}/{WB_PROJECT_NAME}/{dataset}:latest")
+        dataset_artifacts.append(dataset_artifact)
+        dataset_metadata.append(dataset_artifact.metadata)
+       
+    if metadata is None:
+        metadata = {}  
+    metadata.update({
+            "dataset_metadata": dataset_metadata,
+            "alpha_coeff":coeff,
+            "rep_token": rep_token,
+            "hidden_layers": hidden_layers,
+            "direction_method": direction_method,
+            "clean_instruction": clean_instruction,
+            "dirty_instruction": dirty_instruction,
+            "shuffled_data": shuffled_data
+        })
+
+    artifact = wandb.Artifact(
+            name=comb_art_name,
+            type="combined_activations",
+            description=description or "RepE reading activations from multiple shortcut types (including coefficient and sign)",
+            metadata=metadata,
+        )
+    artifact.add_file(activations_path)
+
+    run.log_artifact(artifact)
+    run.finish()
+    print(f"✅ Logged activation artifact: {comb_art_name}")
+
 
 
 # LOGGING EVALUATION RUN ==============================================================================================================
