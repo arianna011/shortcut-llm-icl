@@ -177,13 +177,26 @@ RTE & RTE validation split & 277 \\
 This section presents the results obtained from the experiments evaluating the RepE-based approach to shortcut detection and mitigation.  
 Shortcut detection (Section \ref{sec:detres}) is assessed qualitatively on selected test instances, while shortcut mitigation (Section \ref{sec:mitres}) is evaluated systematically across multiple hyperparameter configurations on different test sets (Table \ref{tab:testsets}).
 To support reliable tracking and reproducibility, all experiments were logged using the Weights \& Biases (W\&B) platform, which recorded both input configurations and output metrics.  
-In addition, the full sets of prompts and activation files used in each run were stored as artifacts, ensuring that every experiment can be reproduced precisely.  
-W\&B was also used to generate clear and organized visualizations of the results.
-
-% hyperparameter search con tabella iperparametri
+In addition, the full sets of prompts and activation files used in each run were stored as artifacts, ensuring that every experiment can be reproduced precisely.
 
 \subsection{Shortcut Detection Results}
 \label{sec:detres}
+
+To qualitatively assess the effectiveness of the RepE-based framework for shortcut detection, the following experiment was conducted. Given a RepReader $R$ trained on a random subset of the RTE dataset and two contrastive test statements $s1$ and $s2$, scores $A_{l,t}$ are computed to measure, at different layers $l$ and token positions $t$, the degree to which the model’s internal representations of $s1$ and $s2$ align with the shortcut direction identified by $R$. The scores computation proceeds as follows:
+
+\begin{itemize}
+    \item \textbf{Encoding of the input statements.} The sentences $s1$ and $s2$ are fed to the frozen target LLM to obtain hidden representations $h_{l}$ for each layer $l$ and token position $t$. Optionally, the model's generated continuations for $s1$ and $s2$ are appended to the input before extracting the hidden representations, allowing shortcut effects to surface in both the prompt and the generation.
+    
+    \item \textbf{Projection onto the shortcut direction.} For each layer $l$ and token position $t$, the hidden representations $h_{l, t}$ is projected onto the shortcut direction $V_l$ inferred by the RepReader $R$ for that layer. The projection is then multiplied by the corresponding sign $S_l$: \[
+    A_{l,t} = \langle h_{l,t}, V_l \rangle \cdot S_l
+    \]
+
+    \item \textbf{Averaged projections.} Given a selected set of hidden layers $L$, the scores $A_{l,t}$ are averaged across all laters in $L$ to obtain a mean shortcut-alignmet score for each token position 
+    \[
+    A^{\text{mean}}_{t} = \frac{1}{|H|} \sum_{l \in H} A_{l,t}
+    \]
+    This aggregation highlights persistent shortcut activation patterns across layers rather than isolated spikes.
+\end{itemize}
 
 \subsection{Shortcut Mitigation Results}
 \label{sec:mitres}
