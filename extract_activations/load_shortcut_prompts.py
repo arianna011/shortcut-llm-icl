@@ -22,6 +22,8 @@ class Task(Enum):
     CAUSAL_REASONING = 2
     QUESTION_CLASSIFICATION = 3
     SENTIMENT_CLASSIFICATION = 4
+    WORD_SENSE_DISAMBIGUATION = 5
+    QUESTION_ANSWERING = 6
 
     def reference_dataset_name(self):
         if self is Task.NLI:
@@ -34,6 +36,10 @@ class Task(Enum):
             return "trec"
         elif self is Task.SENTIMENT_CLASSIFICATION:
             return "sst2" 
+        elif self is Task.WORD_SENSE_DISAMBIGUATION:
+            return "wic"
+        elif self is Task.QUESTION_ANSWERING:
+            return "mmlu"
         else:
             return None
         
@@ -48,6 +54,8 @@ class Task(Enum):
             return 'Classify the type of the answer to the question. abbreviation, entity, description, person, location or number?\n\n'
         elif self is Task.SENTIMENT_CLASSIFICATION:
             return 'Classify the sentiment of the review. positive or negative?\n\n'
+        elif self is Task.WORD_SENSE_DISAMBIGUATION:
+            return 'Identify if the word used in the same way in the two sentences below. true or false?\n\n'
         else:
             return None
         
@@ -72,6 +80,11 @@ class Task(Enum):
         elif self is Task.SENTIMENT_CLASSIFICATION:
             return {'negative': 'negative', 
              'positive': 'positive'}
+        elif self is Task.WORD_SENSE_DISAMBIGUATION:
+            return {"false": "different_use",
+                    "true": "same_use"}
+        elif self is Task.QUESTION_ANSWERING:
+            return {"A": "A", "B": "B", "C": "C", "D":"D"}
         else:
             return None
         
@@ -92,11 +105,15 @@ class Task(Enum):
             return f'Question: ' + input + '\n' + 'Answer Type: '
         elif self is Task.SENTIMENT_CLASSIFICATION:
             return f'Review: ' + input + '\n' + 'Sentiment: '
+        elif self is Task.WORD_SENSE_DISAMBIGUATION:
+            assert isinstance(input, tuple)
+            sent1, sent2, word = input
+            return f'Sentence 1: ' + sent1 + '\nSentence 2: ' + sent2 +'\nWord: ' + word + '\n' + 'Answer: '
         else:
             return None
         
 
-DATASETS_TO_TASKS = {"mnli":Task.NLI, "rte": Task.BINARY_NLI, "copa": Task.CAUSAL_REASONING, "trec": Task.QUESTION_CLASSIFICATION, "sst2": Task.SENTIMENT_CLASSIFICATION, "cr": Task.SENTIMENT_CLASSIFICATION}     
+DATASETS_TO_TASKS = {"mnli":Task.NLI, "rte": Task.BINARY_NLI, "copa": Task.CAUSAL_REASONING, "trec": Task.QUESTION_CLASSIFICATION, "sst2": Task.SENTIMENT_CLASSIFICATION, "cr": Task.SENTIMENT_CLASSIFICATION, "wic": Task.WORD_SENSE_DISAMBIGUATION, "arc": Task.QUESTION_ANSWERING, "mmlu": Task.QUESTION_ANSWERING}     
 SHORTCUT_SUITE_COLS = ["pairID", "sentence1", "sentence2", "gold_label"] 
 SHORTCUT_SUITE_LABELS = ["entailment", "neutral", "contradiction"]
     
