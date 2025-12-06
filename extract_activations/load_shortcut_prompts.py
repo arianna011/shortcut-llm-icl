@@ -19,12 +19,21 @@ from tqdm import tqdm
 class Task(Enum):
     NLI = 0
     BINARY_NLI = 1
+    CAUSAL_REASONING = 2
+    QUESTION_CLASSIFICATION = 3
+    SENTIMENT_CLASSIFICATION = 4
 
     def reference_dataset_name(self):
         if self is Task.NLI:
             return "mnli"
         elif self is Task.BINARY_NLI:
             return "rte"
+        elif self is Task.CAUSAL_REASONING:
+            return "copa"
+        elif self is Task.QUESTION_CLASSIFICATION:
+            return "trec"
+        elif self is Task.SENTIMENT_CLASSIFICATION:
+            return "sst2" 
         else:
             return None
         
@@ -33,6 +42,12 @@ class Task(Enum):
             return "Given the premise, are we justified in saying the hypothesis? yes, no, or maybe.\n\n"
         elif self is Task.BINARY_NLI:
             return "Given the premise, are we justified in saying the hypothesis? yes or no.\n\n"
+        elif self is Task.CAUSAL_REASONING:
+            return "Given the premise, which is the most plausible causal alternative? 1 or 2.\n\n"
+        elif self is Task.QUESTION_CLASSIFICATION:
+            return 'Classify the type of the answer to the question. abbreviation, entity, description, person, location or number?\n\n'
+        elif self is Task.SENTIMENT_CLASSIFICATION:
+            return 'Classify the sentiment of the review. positive or negative?\n\n'
         else:
             return None
         
@@ -44,6 +59,19 @@ class Task(Enum):
         elif self is Task.BINARY_NLI:
             return {"yes": "entailment",
                     "no": "not entailment"} 
+        elif self is Task.CAUSAL_REASONING:
+            return {"1": "1",
+                    "2": "2"} 
+        elif self is Task.QUESTION_CLASSIFICATION:
+            return {'abbreviation': 'abbreviation', 
+             'entity': 'entity', 
+             'description': 'description', 
+             'person': 'person', 
+             'location': 'location', 
+             'number': 'number'}
+        elif self is Task.SENTIMENT_CLASSIFICATION:
+            return {'negative': 'negative', 
+             'positive': 'positive'}
         else:
             return None
         
@@ -56,11 +84,19 @@ class Task(Enum):
             assert isinstance(input, tuple)
             prem, hyp = input
             return f'Premise: {prem}\nHypothesis: {hyp}\nAnswer (choose only one: yes / no): '
+        elif self is Task.CAUSAL_REASONING:
+            assert isinstance(input, tuple)
+            prem, choice1, choice2 = input
+            return f'Premise: {prem}\nChoice 1: {choice1}\nChoice 2: {choice2}\nAnswer (choose only one: 1 / 2): '
+        elif self is Task.QUESTION_CLASSIFICATION:
+            return f'Question: ' + input + '\n' + 'Answer Type: '
+        elif self is Task.SENTIMENT_CLASSIFICATION:
+            return f'Review: ' + input + '\n' + 'Sentiment: '
         else:
             return None
         
 
-DATASETS_TO_TASKS = {"mnli":Task.NLI, "rte": Task.BINARY_NLI}     
+DATASETS_TO_TASKS = {"mnli":Task.NLI, "rte": Task.BINARY_NLI, "copa": Task.CAUSAL_REASONING, "trec": Task.QUESTION_CLASSIFICATION, "sst2": Task.SENTIMENT_CLASSIFICATION, "cr": Task.SENTIMENT_CLASSIFICATION}     
 SHORTCUT_SUITE_COLS = ["pairID", "sentence1", "sentence2", "gold_label"] 
 SHORTCUT_SUITE_LABELS = ["entailment", "neutral", "contradiction"]
     
