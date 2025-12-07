@@ -143,6 +143,8 @@ def prepare_shortcut_activations(
         dataset_art_names = []
         act_list = []
         act_names_list = []
+    elif isinstance(shortcut_types, str):
+        shortcut_types = [shortcut_types]
 
     hidden_layers = list(range(-1, -model_wrap.model.config.num_hidden_layers, -1))
     for shortcut_type in shortcut_types:
