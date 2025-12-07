@@ -395,8 +395,8 @@ def RepE_evaluation(
         mul_shorts = True
         train_dataset_art_names = []
         act_art_names = []
-    elif isinstance(training_dataset_shortcut, str):
-        training_dataset_shortcut = [training_dataset_shortcut]
+    elif isinstance(training_dataset_shortcut_types, str):
+        training_dataset_shortcut_types = [training_dataset_shortcut_types]
     
     for shortcut_type in training_dataset_shortcut_types:
         training_dataset_art_name = L.get_dataset_artifact_name(
