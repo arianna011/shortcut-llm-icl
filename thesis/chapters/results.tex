@@ -119,7 +119,7 @@ Before being fed to the RepReader, each example was formatted using a simple zer
 Instead, the task instances themselves serve as stimuli: the model is not required to answer, but only to process the input prompts, thereby generating hidden-state activations that ideally differ between clean and shortcut-augmented versions of the same example.\\
 
 
-\noindent \textbf{Evaluation Datasets.} The datasets employed for evaluating the proposed methodology (referred to as "NLP Dataset" in Figure \ref{fig:myrepeframework}) are standard NLP benchmarks for the TER task. In particular, in addition to the already cited MNLI, the Recognizing Textual Entailment (RTE) dataset from the GLUE benchmark is used. RTE consists of sentence pairs for entailment vs. not-entailment classification, drawn from the annual RTE challenges held between 2005 and 2011, and built primarily from news and Wikipedia text. While MNLI serves as an \textit{in-distribution} testbed for shortcut detection and mitigation, given that the shortcut training datasets are derived from it, RTE provides an opportunity to test whether the proposed approach generalizes to \textit{naturally occurring} shortcuts in a standard entailment benchmark.\\
+\noindent \textbf{Evaluation Datasets.} The datasets employed for evaluating the proposed methodology (referred to as "NLP Dataset" in Figure \ref{fig:myrepeframework}) are standard NLP benchmarks for the TER task. In particular, in addition to the already cited MNLI, the Recognizing Textual Entailment (RTE) dataset \citep{dagan2006rte} from the GLUE benchmark is used. RTE consists of sentence pairs for entailment vs. not-entailment classification, drawn from the annual RTE challenges held between 2005 and 2011, and built primarily from news and Wikipedia text. While MNLI serves as an \textit{in-distribution} testbed for shortcut detection and mitigation, given that the shortcut training datasets are derived from it, RTE provides an opportunity to test whether the proposed approach generalizes to \textit{naturally occurring} shortcuts in a standard entailment benchmark.\\
 
 For the practical evaluation, the UniBias framework \citep{zhou2024unibiasunveilingmitigatingllm} was used to construct ICL prompts for each test instance.  
 In a $k$-shot setting, the ICL context is built as follows:
@@ -150,6 +150,23 @@ For illustration, in a 1-shot setting, an actual RTE prompt seen by the model at
 \textit{Answer:}
 \end{quote}
 
+To investigate the generalizability of the proposed shortcut mitigation framework beyond entailment tasks, additional NLP benchmarks were considered.  
+Specifically, the following datasets were employed:
+
+\begin{itemize}
+    \item \textbf{COPA} \citep{gordon-etal-2012-semeval}: a commonsense causal reasoning task in which the model chooses between two plausible alternatives to complete a causal relation with a given premise;
+    \item \textbf{CR} \citep{turney2002thumbsthumbsdownsemantic}: a binary sentiment classification dataset consisting of customer reviews labeled as positive or negative;
+    \item \textbf{SST2} \citep{socher-etal-2013-recursive}: the Stanford Sentiment Treebank binary classification task on movie reviews;
+    \item \textbf{WiC} \citep{pilehvar-camacho-collados-2019-wic}: the Word-in-Context benchmark, which tests word sense disambiguation by asking whether a target word has the same meaning in two different sentences;
+    \item \textbf{ARC} \citep{clark2018thinksolvedquestionanswering}: a multiple-choice question answering dataset for grade-school science questions;
+    \item \textbf{MMLU} \citep{hendrycks2021measuringmassivemultitasklanguage}: the Massive Multitask Language Understanding benchmark, a large-scale multiple-choice collection spanning diverse subjects such as mathematics, history, law and computer science.
+\end{itemize}
+
+Evaluating the framework on tasks beyond entailment is also valuable for assessing whether shortcut-related representations learned by LLMs exhibit any degree of cross-task consistency.  
+If similar shortcut directions emerge across heterogeneous datasets, ranging from sentiment analysis to causal reasoning or word-sense disambiguation, this would suggest the presence of shared latent mechanisms through which LLMs internalize and exploit superficial cues.  
+Conversely, a lack of transferability would indicate that shortcut reliance is highly task-specific, reinforcing the need for targeted analyses.  
+Thus, examining multiple NLP tasks provides insights into whether shortcut representations capture generalizable patterns or remain confined to the TER setting from which they were extracted.\\
+
 Given the exploratory nature of the experiments and the limited computational resources available, the test set sizes were kept modest.  
 Table \ref{tab:testsets} reports the test sets used in this work, along with their source splits and number of examples.
 
@@ -161,6 +178,12 @@ Table \ref{tab:testsets} reports the test sets used in this work, along with the
 \midrule
 MNLI & subset of MNLI \textit{validation matched} split & 500 \\
 RTE & RTE validation split & 277 \\
+COPA & COPA validation split & 100 \\
+CR & CR test split & 376 \\
+SST2 & SST2 validation split & 872 \\
+WIC & WiC validation split & 638 \\
+ARC & ARC test split & 1170 \\
+MMLU & subset of MMLU test split & 2000 \\
 \bottomrule
 \end{tabular}
 \vspace{6pt}
@@ -168,7 +191,6 @@ RTE & RTE validation split & 277 \\
 \label{tab:testsets}
 \end{table}
 
-% EVENTUALMENTE AGGIUNGERE RIGHE TABELLA + DESCRIZIONE TEST SET AGGIUNTIVI
 
 
 \section{Results and Analysis}
@@ -250,8 +272,46 @@ The outcomes of the shortcut detection experiments offer insight into the effect
 \label{sec:mitres}
 
 
+\begin{table}[h!]
+\centering
+\begin{tabular}{l *{4}{cc}}
+\toprule
+    & \multicolumn{2}{c}{\textbf{Baseline}}
+    & \multicolumn{2}{c}{\textbf{PCA+LinComb}}
+    & \multicolumn{2}{c}{\textbf{PCA+PieceLin}}
+    & \multicolumn{2}{c}{\textbf{PCA+Proj}} \\
+\midrule
+    & Acc & F1
+    & Acc & F1
+    & Acc & F1
+    & Acc & F1 \\
+\cmidrule(lr){2-3}      % under Baseline
+\cmidrule(lr){4-5}      % under PCA + LinComb
+\cmidrule(lr){6-7}      % under PCA + PieceLin
+\cmidrule(lr){8-9}      % under PCA + Proj
+\textbf{RTE}
+    & 0.787 & 0.784 & 0.805 & 0.800 & \textbf{0.834} & \textbf{0.832} & 0.823 & 0.822 \\
+\textbf{MNLI}
+    & 0.598 & 0.488 & 0.622 & 0.503 & 0.000 & 0.000 & 0.000 & 0.000 \\
+\textbf{COPA}
+    & 0.000 & 0.000 & \textbf{0.880} & \textbf{0.879} & 0.870 & 0.867 & \textbf{0.880} & \textbf{0.879} \\
+\textbf{CR}
+    & 0.000 & 0.000 & \textbf{0.939} & \textbf{0.933} & 0.931 & 0.924 & 0.926 & 0.918 \\
+\textbf{SST2}
+    & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+\textbf{WIC}
+    & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+\textbf{ARC}
+    & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+\textbf{MMLU}
+    & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+\bottomrule
+\end{tabular}
+\vspace{6pt}
+\caption{Best accuracy and F1 scores obtained for the base Mistral-7B-Instruct model and three RepControl configurations using the PCA representation reader with the following operators: linear combination (LinComb), piecewise-linear transformation (PieceLin) and projection (Proj).}
+\end{table}
+
 % description of all hyperparameters (e.g. selection method)
-% numeric results on different datasets
 % instance specific repcontrol
 % shortcut aggregation experiment
 
