@@ -176,7 +176,7 @@ Table \ref{tab:testsets} reports the test sets used in this work, along with the
 \toprule
 \textbf{Name} & \textbf{Source} & \textbf{Size} \\
 \midrule
-MNLI & subset of MNLI \textit{validation matched} split & 500 \\
+MNLI & subset of MNLI "validation matched" split & 500 \\
 RTE & RTE validation split & 277 \\
 COPA & COPA validation split & 100 \\
 CR & CR test split & 376 \\
@@ -271,6 +271,42 @@ The outcomes of the shortcut detection experiments offer insight into the effect
 \subsection{Shortcut Mitigation Results}
 \label{sec:mitres}
 
+To evaluate the effectiveness of the proposed RepE-based framework described in Section \ref{sec:method} for mitigating shortcut learning, the Mistral 7B Instruct v0.1 model was evaluated on ICL-based classification tasks both in its base version and under RepControl interventions. Model performance was assessed using standard classification metrics, including accuracy and F1-score.\\
+
+A grid search over multiple hyperparameter configurations was conducted to identify effective intervention settings and to analyze the sensitivity of the mitigation performance to different control parameters. Table \ref{tab:hyperparams} summarizes the hyperparameters and the corresponding values explored in the experiments.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{p{3.5cm} p{5.5cm} p{3.5cm}}
+\toprule
+\textbf{Hyperparameter} & \textbf{Description} & \textbf{Values Tested} \\
+\midrule
+RepReader Type & Method used to extract the shortcut direction from hidden representations & PCA, ClusterMean \\
+
+Control Operator & RepControl operation applied to hidden states & Linear Combination, Piecewise-linear, Projection \\
+
+Intervention Layers & Range of transformer layers where control is applied & \{from -5 to -17\}, \{from -8 to -22\}, \{from -10 to -29\} \\
+
+Representation Token & Token position used for intervention & Last input token \\
+
+Intervention Strength ($\alpha$) & Scaling coefficient controlling the magnitude of the intervention & $\{-2.0,\ -1.5,\ -1.0$ $-0.5,\ -0.3,\ 1.0,$ $\ 1.5\}$ \\
+
+Shot Setting ($k$) & Number of ICL demonstrations per class & $k \in \{0,1\}$ \\
+
+Training shortcut & Type of shortcut cue present in the dataset used to extract the latent direction & Negation, Position, Style \\
+
+Training dataset size & Number of prompt pairs used to extract clean and dirty hidden representations & $\{64,\ 128,\ 256,\ 512\}$\\
+
+Training prompt selection & Criterion used to select prompts from the ShortcutSuite training set  & Random, model-failure-only\\
+
+\bottomrule
+\end{tabular}
+\vspace{6pt}
+\caption{Hyperparameter tested for shortcut mitigation experiments.}
+\label{tab:hyperparams}
+\end{table}
+
+
 
 \begin{table}[h!]
 \centering
@@ -298,11 +334,11 @@ The outcomes of the shortcut detection experiments offer insight into the effect
 \textbf{CR}
     & 0.000 & 0.000 & \textbf{0.939} & \textbf{0.933} & 0.931 & 0.924 & 0.926 & 0.918 \\
 \textbf{SST2}
-    & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+    & 0.000 & 0.000 & 0.953 & 0.953 & 0.952 & 0.952 & 0.950 & 0.949 \\
 \textbf{WIC}
-    & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+    & 0.000 & 0.000 & 0.525 & 0.450 & 0.547 & 0.533 & 0.508 & 0.406 \\
 \textbf{ARC}
-    & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+    & 0.000 & 0.000 & 0.685 & 0.684 & 0.682 & 0.680 & 0.677 & 0.676 \\
 \textbf{MMLU}
     & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
 \bottomrule
@@ -311,7 +347,6 @@ The outcomes of the shortcut detection experiments offer insight into the effect
 \caption{Best accuracy and F1 scores obtained for the base Mistral-7B-Instruct model and three RepControl configurations using the PCA representation reader with the following operators: linear combination (LinComb), piecewise-linear transformation (PieceLin) and projection (Proj).}
 \end{table}
 
-% description of all hyperparameters (e.g. selection method)
 % instance specific repcontrol
 % shortcut aggregation experiment
 
