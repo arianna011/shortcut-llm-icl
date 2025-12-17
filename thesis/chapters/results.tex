@@ -273,7 +273,7 @@ The outcomes of the shortcut detection experiments offer insight into the effect
 
 To evaluate the effectiveness of the proposed RepE-based framework described in Section \ref{sec:method} for mitigating shortcut learning, the Mistral 7B Instruct v0.1 model was evaluated on ICL-based classification tasks both in its base version and under RepControl interventions. Model performance was assessed using standard classification metrics, including accuracy and F1-score.\\
 
-A grid search over multiple hyperparameter configurations was conducted to identify effective intervention settings and to analyze the sensitivity of the mitigation performance to different control parameters. Table \ref{tab:hyperparams} summarizes the hyperparameters and the corresponding values explored in the experiments.
+\noindent \textbf{Hyperparameter search.} A grid search over multiple hyperparameter configurations was conducted to identify effective intervention settings and to analyze the sensitivity of the mitigation performance to different control parameters. Table \ref{tab:hyperparams} summarizes the hyperparameters and the corresponding values explored in the experiments.
 
 \begin{table}[ht]
 \centering
@@ -289,13 +289,13 @@ Intervention Layers & Range of transformer layers where control is applied & \{f
 
 Representation Token & Token position used for intervention & Last input token \\
 
-Intervention Strength ($\alpha$) & Scaling coefficient controlling the magnitude of the intervention & $\{-2.0,\ -1.5,\ -1.0$ $-0.5,\ -0.3,\ 1.0,$ $\ 1.5\}$ \\
+Intervention Strength ($\alpha$) & Scaling coefficient controlling the magnitude of the intervention & $\{-1.7,\ -1.5,\ -1.0,$ $-0.5\ \}$ \\
 
-Shot Setting ($k$) & Number of ICL demonstrations per class & $k \in \{0,1\}$ \\
+Shot Setting ($k$) & Number of ICL demonstrations per class & $k = 1$ \\
 
 Training shortcut & Type of shortcut cue present in the dataset used to extract the latent direction & Negation, Position, Style \\
 
-Training dataset size & Number of prompt pairs used to extract clean and dirty hidden representations & $\{64,\ 128,\ 256,\ 512\}$\\
+Training dataset size & Number of prompt pairs used to extract clean and dirty hidden representations & $\{\ 64,\ 128,\ 256,\ 512\ \}$\\
 
 Training prompt selection & Criterion used to select prompts from the ShortcutSuite training set  & Random, model-failure-only\\
 
@@ -306,6 +306,24 @@ Training prompt selection & Criterion used to select prompts from the ShortcutSu
 \label{tab:hyperparams}
 \end{table}
 
+The hyperparameter search was conducted on the RTE test set using a Weights\&Bias sweep. Several observations can be drawn from the results. First, as shown in Figure \ref{fig:coeffplot}, stronger interventions ($\alpha = -1.7$ or $\alpha = -1.5$) are associated with lower average accuracy scores, whereas the best results, both in terms of average and peak accuracy, are achieved with a moderate intervention strength ($\alpha = -0.5$).  
+This suggests that excessively strong suppression of the shortcut direction may also remove task-relevant information that is entangled with the shortcut representation, thereby harming overall performance.  
+In contrast, milder interventions appear to strike a better balance by attenuating shortcut reliance while preserving sufficient semantic signal to support correct inference. Regarding the size of the training dataset, no clear monotonic relationship emerges between the number of prompt pairs and model performance. Nevertheless, smaller dataset sizes (64 or 128 prompt pairs) tend to achieve the highest accuracy more frequently across runs. This suggests that even a limited number of randomly sampled contrastive examples may be sufficient to expose dominant shortcut-related signals in the model’s representations, potentially reducing the influence of noise that could otherwise degrade performance.\\
+
+The type of shortcut cue present in the training prompts also has a noticeable impact on model performance under intervention.  
+In particular, the \textit{Negation} and \textit{Position} shortcut types yield comparable results, with average accuracy scores across runs of $62\%$ and $61\%$, respectively.  
+In contrast, the \textit{Style} shortcut leads to a marked drop in performance, with an average accuracy of $58\%$ and worst-case runs reaching as low as $41\%$. This suggests that stylistic transformations may induce more diffuse or less linearly separable shortcut representations, making them harder to isolate and suppress through linear RepControl interventions.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{assets/NewCoeffAcc.png}
+    \caption{Scatter plot of the hyperparameter search runs, generated via Weights \& Bias, with respect to the $\alpha$ coefficient values and the training datasets sizes. The blue curve represents the running avverage of the achieved accuracy scores across runs.}
+    \label{fig:coeffplot}
+\end{figure}
+
+% prompt selection
+% direction method and control operator
+% intervention layers
 
 
 \begin{table}[h!]
@@ -340,7 +358,7 @@ Training prompt selection & Criterion used to select prompts from the ShortcutSu
 \textbf{ARC}
     & 0.000 & 0.000 & 0.685 & 0.684 & 0.682 & 0.680 & 0.677 & 0.676 \\
 \textbf{MMLU}
-    & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+    & 0.000 & 0.000 & 0.513 & 0.513 & 0.000 & 0.000 & 0.000 & 0.000 \\
 \bottomrule
 \end{tabular}
 \vspace{6pt}
@@ -351,6 +369,9 @@ Training prompt selection & Criterion used to select prompts from the ShortcutSu
 % shortcut aggregation experiment
 
 \subsection{Qualitative Analysis}
+
+% confusion matrices 
+% model confidence
 
 \subbib{}
 \end{document}
