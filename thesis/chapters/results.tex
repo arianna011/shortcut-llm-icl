@@ -310,10 +310,6 @@ The hyperparameter search was conducted on the RTE test set using a Weights\&Bia
 This suggests that excessively strong suppression of the shortcut direction may also remove task-relevant information that is entangled with the shortcut representation, thereby harming overall performance.  
 In contrast, milder interventions appear to strike a better balance by attenuating shortcut reliance while preserving sufficient semantic signal to support correct inference. Regarding the size of the training dataset, no clear monotonic relationship emerges between the number of prompt pairs and model performance. Nevertheless, smaller dataset sizes (64 or 128 prompt pairs) tend to achieve the highest accuracy more frequently across runs. This suggests that even a limited number of randomly sampled contrastive examples may be sufficient to expose dominant shortcut-related signals in the model’s representations, potentially reducing the influence of noise that could otherwise degrade performance.\\
 
-The type of shortcut cue present in the training prompts also has a noticeable impact on model performance under intervention.  
-In particular, the \textit{Negation} and \textit{Position} shortcut types yield comparable results, with average accuracy scores across runs of $62\%$ and $61\%$, respectively.  
-In contrast, the \textit{Style} shortcut leads to a marked drop in performance, with an average accuracy of $58\%$ and worst-case runs reaching as low as $41\%$. This suggests that stylistic transformations may induce more diffuse or less linearly separable shortcut representations, making them harder to isolate and suppress through linear RepControl interventions.
-
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{assets/NewCoeffAcc.png}
@@ -321,9 +317,30 @@ In contrast, the \textit{Style} shortcut leads to a marked drop in performance, 
     \label{fig:coeffplot}
 \end{figure}
 
-% prompt selection
-% direction method and control operator
+The type of shortcut cue present in the training prompts also has a noticeable impact on model performance under intervention.  
+In particular, the \textit{Negation} and \textit{Position} shortcut types yield comparable results, with average accuracy scores across runs of $62\%$ and $61\%$, respectively.  
+In contrast, the \textit{Style} shortcut leads to a marked drop in performance, with an average accuracy of $58\%$ and worst-case runs reaching as low as $41\%$. This suggests that stylistic transformations may induce more diffuse or less linearly separable shortcut representations, making them harder to isolate and suppress through linear RepControl interventions. Moreover, restricting the training set to prompt pairs for which the presence of a shortcut cue caused the model to misclassify the example did not lead to improved post-intervention performance, while significantly increasing the computational cost of the data selection process.  
+As a result, random sampling of training prompts was adopted in all subsequent experiments.\\
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{assets/DirectionMethod+Operator.png}
+    \caption{Bar plot showing the average accuracy across hyperparameter search runs for each combination of RepReader type and RepControl operator.}
+    \label{fig:dirop}
+\end{figure}
+
+As shown in Figure \ref{fig:dirop}, the performance achieved by different direction extraction methods (RepReader types) and RepControl operators is generally comparable across configurations. Nevertheless, some consistent trends emerge from the results: PCA-based RepReaders outperform ClusterMean across all operators, and the projection operator achieves the highest overall performance among the tested control strategies. A possible explanation for these observations can be found in the nature of both the representation extraction methods and the control operators. The PCA-based RepReader aim to identify the direction that explain the largest variance across contrastive hidden representations, which, in the shortcut detection setting, may correspond to dominant and consistently activated shortcut-related signals. By aggregating information across many examples without relying on explicit class centroids, PCA is more robust to noise and idiosyncratic variations introduced by individual prompt pairs. In contrast, the ClusterMean approach relies on averaging representations within the clean and shortcut-induced groups, which may be more sensitive to outliers or to residual semantic differences unrelated to the shortcut itself, resulting in less stable directions.\\
+
+Regarding the control operators, the superior performance of the projection approach can be interpreted as a consequence of its conservative nature.  Rather than adding or subtracting a fixed perturbation to the hidden states, projection explicitly removes the component of the representation aligned with the shortcut direction, leaving the remaining subspace unchanged. This minimizes the risk of distorting task-relevant semantic information that may be partially entangled with shortcut features, a risk that is more pronounced for additive operators such as linear combination or piecewise modulation, especially at higher intervention strengths.\\
+
+This interpretation is consistent with prior work on linear feature extraction and representation intervention, which shows that dominant properties of neural representations often emerge as high-variance linear directions.  
+At the same time, recent theoretical analyses have demonstrated that modern neural networks, including Large Language Models, encode multiple features in \textit{superposition}, that is, overlapping and non-orthogonal subspaces within the same representational dimensions \citep{elhage2022toymodelssuperposition}.  
+Under feature superposition, any linear intervention inevitably affects entangled features. However, projection-based control minimizes this effect by subtracting shortcut-aligned components rather than actively steering representations, resulting in more stable downstream behavior \citep{elazar-etal-2021-amnesic}.\\
+
+
 % intervention layers
+
+\noindent \textbf{Evaluation Results.}
 
 
 \begin{table}[h!]
