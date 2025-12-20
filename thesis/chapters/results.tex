@@ -317,10 +317,18 @@ In contrast, milder interventions appear to strike a better balance by attenuati
     \label{fig:coeffplot}
 \end{figure}
 
-The type of shortcut cue present in the training prompts also has a noticeable impact on model performance under intervention.  
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{assets/shortcut_types.png}
+    \caption{Violin plot showing the distribution of accuracy scores across hyperparameter search runs, grouped by the type of shortcut cue used during RepReading.}
+    \label{fig:shortcut_types}
+\end{figure}
+
+The type of shortcut cue present in the training prompts also has a noticeable impact on model performance under intervention, as shown in Figure \ref{fig:shortcut_types}.  
 In particular, the \textit{Negation} and \textit{Position} shortcut types yield comparable results, with average accuracy scores across runs of $62\%$ and $61\%$, respectively.  
-In contrast, the \textit{Style} shortcut leads to a marked drop in performance, with an average accuracy of $58\%$ and worst-case runs reaching as low as $41\%$. This suggests that stylistic transformations may induce more diffuse or less linearly separable shortcut representations, making them harder to isolate and suppress through linear RepControl interventions. Moreover, restricting the training set to prompt pairs for which the presence of a shortcut cue caused the model to misclassify the example did not lead to improved post-intervention performance, while significantly increasing the computational cost of the data selection process.  
-As a result, random sampling of training prompts was adopted in all subsequent experiments.\\
+In contrast, the \textit{Style} shortcut leads to a marked drop in performance, with an average accuracy of $58\%$ and worst-case runs reaching as low as $41\%$. This suggests that stylistic transformations may induce more diffuse or less linearly separable shortcut representations, making them harder to isolate and suppress through linear RepControl interventions. Unlike lexical or positional cues, stylistic changes tend to affect broader aspects of the input distribution, potentially entangling shortcut-related signals with task-relevant semantic features and increasing representational overlap.
+Additionally, restricting the training set to prompt pairs for which the presence of a shortcut cue caused the model to misclassify the example did not result in improved post-intervention performance, while substantially increasing the computational cost of data selection.  
+Consequently, random sampling of training prompts was adopted in all subsequent experiments as a more efficient and equally effective strategy.\\
 
 \begin{figure}
     \centering
