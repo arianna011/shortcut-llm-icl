@@ -337,8 +337,25 @@ This interpretation is consistent with prior work on linear feature extraction a
 At the same time, recent theoretical analyses have demonstrated that modern neural networks, including Large Language Models, encode multiple features in \textit{superposition}, that is, overlapping and non-orthogonal subspaces within the same representational dimensions \citep{elhage2022toymodelssuperposition}.  
 Under feature superposition, any linear intervention inevitably affects entangled features. However, projection-based control minimizes this effect by subtracting shortcut-aligned components rather than actively steering representations, resulting in more stable downstream behavior \citep{elazar-etal-2021-amnesic}.\\
 
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{assets/intervention_layers.png}
+    \caption{Box-and-whisker plot of accuracy scores across hyperparameter search runs, grouped by the range of transformer layers targeted by RepControl interventions.}
+    \label{fig:layers}
+\end{figure}
 
-% intervention layers
+Lastly, as shown in Figure \ref{fig:layers}, the range of transformer layers at which RepControl is applied has a substantial impact on post-intervention performance.  
+Although all tested layer ranges exhibit considerable variability in accuracy across runs, the range spanning layers from $-5$ to $-17$ consistently yields the most reliable results, as indicated by a higher concentration of accuracy scores around $74\%$.  
+The range from $-8$ to $-22$ reaches a peak accuracy comparable to that of the $-5$ to $-17$ range; however, it displays significantly higher variance, including the lowest-performing runs observed across all configurations.  
+Finally, the widest range, from $-10$ to $-29$, produces the lowest average accuracy overall, suggesting that interventions applied too deeply across the model may increasingly disrupt task-relevant representations.\\
+
+More generally, a plausible interpretation of these results is that the effectiveness of RepControl is strongly tied to the representational role played by different transformer layers.  
+Prior work has shown that in LLMs higher layers tend to encode increasingly abstract, task-specific and decision-relevant information, while lower layers focus more on lexical, syntactic, and surface-level features \citep{rogers-etal-2020-primer}.  
+Applying RepControl to a mid-late range of layers (such as $-5$ to $-17$) may therefore allow the intervention to directly influence the model's final decision process, suppressing shortcut-aligned activations at the stage where they are most behaviorally relevant.  In contrast, extending the intervention to earlier layers, as in the wider $-10$ to $-29$ range, may inadvertently disrupt foundational representations that later layers rely on to construct correct semantic interpretations. This effect is exacerbated by the aforementioned phenomenon of feature superposition.
+Thus, repeatedly removing components aligned with a shortcut direction across many layers can accumulate unintended side effects through the residual stream, progressively degrading useful signal even when conservative operators such as projection are used.
+Overall, these results indicate that effective shortcut mitigation requires a careful balance between targeting layers close enough to the model’s decision circuitry to influence behavior, while avoiding overly broad interventions that risk amplifying the negative effects of representational entanglement.\\
+
+
 
 \noindent \textbf{Evaluation Results.}
 
@@ -375,13 +392,14 @@ Under feature superposition, any linear intervention inevitably affects entangle
 \textbf{ARC}
     & 0.000 & 0.000 & 0.685 & 0.684 & 0.682 & 0.680 & 0.677 & 0.676 \\
 \textbf{MMLU}
-    & 0.000 & 0.000 & 0.513 & 0.513 & 0.000 & 0.000 & 0.000 & 0.000 \\
+    & 0.000 & 0.000 & 0.513 & 0.513 & 0.530 & 0.528 & 0.524 & 0.524 \\
 \bottomrule
 \end{tabular}
 \vspace{6pt}
 \caption{Best accuracy and F1 scores obtained for the base Mistral-7B-Instruct model and three RepControl configurations using the PCA representation reader with the following operators: linear combination (LinComb), piecewise-linear transformation (PieceLin) and projection (Proj).}
 \end{table}
 
+\noindent \textbf{Prompt specific RepControl.}
 % instance specific repcontrol
 % shortcut aggregation experiment
 
