@@ -163,7 +163,7 @@ def main():
     final_acc, predictions, all_label_probs, cf = ICL_evaluation(model, tokenizer, device, prompt_list, test_labels, 
                                                     gt_ans_ids_list, dataset_name, 
                                                     repE=RepE, activations_art_name=activations,
-                                                    gen_tokens=new_tokens, intervention_layers = intervention_layers,                                                  resume=eval_resume, failures_csv_path=fail_csv_path)
+                                                    gen_tokens=new_tokens, intervention_layers = intervention_layers,               resume=eval_resume)
 
     write_json(record_file_path, f"final accuracy: {final_acc} {str(cf)}")
     if log_WB:
