@@ -20,7 +20,7 @@ In order to evaluate the framework proposed in Section \ref{sec:method}, two mai
 
 Accordingly, this section describes the experimental configuration adopted for both stages, detailing the models, datasets, prompt design and implementation settings used in the analysis.\\
 
-\subsection{Models}
+\subsection{Model}
 
 All experiments were carried out using the \textit{Mistral 7B Instruct v0.1} model.\footnote{Available at \url{https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1}}  
 This choice was motivated by both methodological and practical considerations: Mistral 7B Instruct v0.1 is a decoder-only transformer with open weights, which allows direct access to the model’s internal hidden states, an essential requirement for applying the RepE-based framework. Moreover, despite its moderate size, it demonstrates strong instruction-following and reasoning capabilities, making it representative of modern LLMs while remaining computationally efficient. From a practical perspective, the experiments were conducted on free Google Colab environments, where hardware memory is limited. To enable inference and activation extraction within these constraints, the model was loaded in 4-bit precision using the \textit{bitsandbytes} quantization library. This approach significantly reduced GPU memory usage with minimal degradation in representational fidelity, allowing the experiments to be performed efficiently without altering the qualitative behavior of the model.\\
