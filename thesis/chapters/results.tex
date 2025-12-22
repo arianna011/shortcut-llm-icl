@@ -41,6 +41,7 @@ First, Mistral's GQA enables faster computation and lower GPU memory footprint d
 Finally, empirical evaluations have shown that Mistral 7B consistently outperforms LLaMA 2 models of comparable size on most standard benchmarks \citep{jiang2023mistral7b}, suggesting that its latent representations are richer and more semantically structured, an advantageous property for analyzing shortcut mechanisms within the representation space. Overall, Mistral 7B Instruct v0.1 provides an effective balance between accessibility, interpretability, and representational richness for the study of shortcut detection and mitigation.\\
 
 \subsection{Datasets and prompt design}
+\label{subsec:datasets}
 
 Most of the conducted experiments are based on the \textit{Textual Entailment Recognition} (TER) task in Natural Language Processing (NLP).  
 Also known as \textit{Natural Language Inference} (NLI), TER is an application-independent task that consists in automatically determining whether a directional entailment relationship holds between two text fragments.  
@@ -364,9 +365,8 @@ Thus, repeatedly removing components aligned with a shortcut direction across ma
 Overall, these results indicate that effective shortcut mitigation requires a careful balance between targeting layers close enough to the model’s decision circuitry to influence behavior, while avoiding overly broad interventions that risk amplifying the negative effects of representational entanglement.\\
 
 
-
-\noindent \textbf{Evaluation Results.}
-
+\noindent \textbf{Evaluation Results.} Table \ref{tab:results} reports the performance of the base Mistral-7B-Instruct model and compares it with the best accuracy and F1 scores obtained when shortcut mitigation is enabled using PCA-based RepReading combined with different RepControl operators: linear combination, piecewise-linear modulation and projection. 
+Results are presented across the NLP benchmarks test sets described in Section \ref{subsec:datasets}, covering a range of tasks including textual entailment (RTE, MNLI), commonsense reasoning (COPA), sentiment analysis (CR, SST2), word sense disambiguation (WiC), science question answering (ARC) and broad multi-domain evaluation (MMLU).\\
 
 \begin{table}[h!]
 \centering
@@ -410,8 +410,35 @@ Overall, these results indicate that effective shortcut mitigation requires a ca
 \bottomrule
 \end{tabular}
 \vspace{6pt}
-\caption{Best accuracy and F1 scores obtained for the base Mistral-7B-Instruct model and three RepControl configurations using the PCA representation reader with the following operators: linear combination (LinComb), piecewise-linear transformation (PieceLin) and projection (Proj).}
+\caption{\label{tab:results} Best accuracy and F1 scores obtained for the base Mistral-7B-Instruct model and three RepControl configurations using the PCA representation reader with the following operators: linear combination (LinComb), piecewise-linear transformation (PieceLin) and projection (Proj).}
 \end{table}
+
+In particular, the reported results correspond to the best-performing configuration identified during the hyperparameter search.  
+For each benchmark, the highest accuracy and F1 scores were selected among those obtained under different RepControl settings.  
+Specifically, the shortcut direction was extracted from the ShortcutSuite dataset targeting either the \textit{Negation} or \textit{Position} shortcut cue, using training sets of 64 or 128 contrastive prompt pairs.  
+RepControl interventions were applied to transformer layers ranging from $-5$ to $-17$, with the intervention strength coefficient set to $\alpha = -0.5$.\\
+
+Overall, every RepControl configuration yield some improvements over the baseline across all evaluated tasks, indicating that suppressing shortcut-aligned directions extracted via PCA can positively influence model behavior even beyond the task and dataset used for representation extraction.  
+On average, RepControl increases accuracy from $0.717$ to approximately $0.74$, with gains both on tasks where shortcut reliance is known to be more pronounced or where baseline performance is relatively low (e.g. MNLI, WiC and MMLU) and on tasks with stronger baseline performance such as COPA, where shortcut mitigation leads to marked improvements despite the already high initial accuracy.\\
+
+A closer inspection reveals that no single operator dominates across all tasks, although some consistent patterns emerge.  
+For textual entailment benchmarks, PCA combined with piecewise-linear modulation achieves the strongest results on RTE, while PCA with projection performs best on MNLI.  
+This suggests that different entailment datasets may rely on distinct shortcut mechanisms: RTE, being smaller and more lexically constrained, may benefit from conditional amplification or suppression of shortcut-aligned activations, whereas MNLI, with its greater diversity and complexity, appears to favor the more conservative removal of shortcut components through projection, which minimizes unintended interference with task-relevant representations.\\
+
+For sentiment-related tasks (CR and SST2), RepControl yields smaller yet consistent improvements over the baseline.  
+These tasks already exhibit strong baseline performance, leaving limited room for improvement; nevertheless, the observed gains indicate that shortcut suppression does not interfere with, and may even slightly enhance, robust semantic reasoning when shortcuts overlap with superficial signals such as sentiment-bearing words.  
+In this setting, the linear combination operator performs particularly well, suggesting that mild additive adjustments are sufficient to rebalance representations without removing task-relevant information.\\
+
+More challenging tasks such as WiC and MMLU show some of the largest relative improvements, especially when using the piecewise-linear operator.  
+These benchmarks require fine-grained semantic distinctions or broad domain knowledge and are therefore more sensitive to spurious correlations and heuristic decision strategies.  
+The effectiveness of piecewise-linear control in this context may stem from its conditional nature, which selectively amplifies or suppresses shortcut-aligned activations depending on their alignment with the current hidden representation, enabling a more adaptive intervention than purely additive or subtractive approaches.\\
+
+Taken together, these results support the central hypothesis of this work: shortcut-related mechanisms can be captured as latent directions in the representation space of LLMs and selectively manipulated to improve performance across tasks.  
+At the same time, the variability observed across datasets and RepControl operators highlights that different forms of representational control may be required depending on how shortcut cues are encoded and entangled with task-relevant information.\\ 
+
+A particularly noteworthy observation is that, although the shortcut direction was extracted using shortcut cues specifically designed for the textual entailment task, its manipulation consistently led to performance improvements across a diverse set of heterogeneous NLP benchmarks.  
+This suggests that the extracted direction does not merely encode task-specific artifacts of textual entailment, but instead captures a more general representational tendency of the model to rely on superficial or spurious correlations when making predictions. A plausible interpretation is that shortcut reliance reflects a shared internal mechanism through which LLMs exploit easily accessible heuristics, such as lexical overlap, stylistic patterns, or positional regularities. Although these shortcuts manifest differently at the input level in tasks such as sentiment analysis, commonsense reasoning, or word sense disambiguation, they may be implemented internally through overlapping representational subspaces that bias the model toward shallow decision strategies.  
+From this perspective, the shortcut direction extracted in the textual entailment setting can be interpreted as capturing a higher-level inductive bias of the model, rather than a narrow task-specific feature. However, the variability in gains across tasks indicates that shortcut reliance is not fully task-agnostic: different benchmarks may engage this shared mechanism to different extents, or may encode task-relevant information with varying degrees of entanglement with shortcut-aligned features.\\
 
 \noindent \textbf{Prompt specific RepControl.}
 % instance specific repcontrol
