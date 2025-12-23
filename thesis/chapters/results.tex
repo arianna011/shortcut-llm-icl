@@ -439,16 +439,147 @@ At the same time, the variability observed across datasets and RepControl operat
 
 A particularly noteworthy observation is that, although the shortcut direction was extracted using shortcut cues specifically designed for the textual entailment task, its manipulation consistently led to performance improvements across a diverse set of heterogeneous NLP benchmarks.  
 This suggests that the extracted direction does not merely encode task-specific artifacts of textual entailment, but instead captures a more general representational tendency of the model to rely on superficial or spurious correlations when making predictions. A plausible interpretation is that shortcut reliance reflects a shared internal mechanism through which LLMs exploit easily accessible heuristics, such as lexical overlap, stylistic patterns, or positional regularities. Although these shortcuts manifest differently at the input level in tasks such as sentiment analysis, commonsense reasoning, or word sense disambiguation, they may be implemented internally through overlapping representational subspaces that bias the model toward shallow decision strategies.  
-From this perspective, the shortcut direction extracted in the textual entailment setting can be interpreted as capturing a higher-level inductive bias of the model, rather than a narrow task-specific feature. However, the variability in gains across tasks indicates that shortcut reliance is not fully task-agnostic: different benchmarks may engage this shared mechanism to different extents, or may encode task-relevant information with varying degrees of entanglement with shortcut-aligned features.\\
+From this perspective, the shortcut direction extracted in the textual entailment setting can be interpreted as capturing a higher-level inductive bias of the model, rather than a narrow task-specific feature. However, the variability in gains across tasks indicates that shortcut reliance is not fully task-agnostic: different benchmarks may engage this shared mechanism to different extents, or may encode task-relevant information with varying degrees of entanglement with shortcut-aligned features.
 
-\noindent \textbf{Prompt specific RepControl.}
-% instance specific repcontrol
 % shortcut aggregation experiment
 
 \subsection{Qualitative Analysis}
 
-% confusion matrices 
-% model confidence
+This section presents additional qualitative experiments aimed at complementing the quantitative evaluation of the proposed shortcut mitigation approach.  
+The goal of these analyses is to assess whether the observed performance improvements are driven by the intended causal mechanisms (namely the suppression of shortcut-related representations) rather than by incidental or fortunate side effects.  
+At the same time, these experiments serve to evaluate the interpretability of the proposed method by examining how representation-level interventions affect model behavior in specific, illustrative cases.\\
+
+\noindent \textbf{RepControl effect on classification labels.} The RepControl intervention designed to mitigate shortcut learning was evaluated on selected input examples in order to qualitatively assess its impact on full model generations under representations steering.  
+The responses in the example reported below were obtained using, in the first case, the baseline model, and in the second case a controlled version of the model in which shortcut-aligned activations extracted via PCA from 128 contrastive prompt pairs from the ShortcutSuite dataset targeting the Negation shortcut were suppressed through linear combination with strength coefficient $\alpha = -0.5$ and intervention layers ranging from -5 to -17.  
+For clarity, the outputs are truncated after the first 20 generated tokens.\\
+
+\begin{tcolorbox}[
+  colback=gray!5,
+  colframe=black!50,
+  boxrule=0.3pt,
+  arc=2pt,
+  title={Model behavior under shortcut mitigation},
+  fonttitle=\bfseries
+]
+\textbf{Input:}\\
+$\left[INST\right]$ Is the hypothesis entailed by the premise? yes or no. $\left[/INST\right]$
+\textit{Premise}: Fruit, vegetables, electronics, and a little bit of everything else is on sale here. 
+\textit{Hypothesis}: You can buy all sorts of products and food here and green is not red.
+
+\vspace{0.6em}
+
+\textbf{Baseline Output:}\\
+No, the hypothesis is not entailed by the premise. The premise only states
+
+\vspace{0.4em}
+
+\textbf{RepControl Output:}\\
+Yes, the hypothesis is entailed by the premise. The premise mentions that
+\end{tcolorbox}
+
+\vspace{1em}
+
+\noindent This example illustrates that suppressing the shortcut-aligned direction successfully alters the model’s decision, leading it to correctly recognize the entailment relation despite the presence of a negation-based distractor in the hypothesis. Notably, both the baseline and controlled generations follow the expected answer format (starting with \textit{yes} or \textit{no} and continuing with a natural language explanation), indicating that the RepControl intervention does not interfere with the model’s ability to generate coherent and meaningful text, but rather selectively influences the decision-relevant components of its internal representations.\\
+
+The following example uses a positive strength coefficient $\alpha = +1.5$ in order to examine the effects of amplifying the shortcut-aligned direction rather than suppressing it. 
+
+\begin{tcolorbox}[
+  colback=gray!5,
+  colframe=black!50,
+  boxrule=0.3pt,
+  arc=2pt,
+  title={Model behavior under shortcut amplification},
+  fonttitle=\bfseries
+]
+\textbf{Input:}\\
+$\left[INST\right]$ Is the hypothesis entailed by the premise? yes or no. $\left[/INST\right]$
+\textit{Premise}: Children will enjoy the little steam train that loops around the bay to Le Crotoy in the summer.
+\textit{Hypothesis}: There is a steam train looping around the bay to Le Crotoy and false is not true.
+
+\vspace{0.6em}
+
+\textbf{Baseline Output:}\\
+Yes, the hypothesis is entailed by the premise.
+\vspace{0.4em}
+
+\textbf{RepControl Output:}\\
+The two statements are not related, so the hypothesis is not entailed by the premise.
+\end{tcolorbox}
+
+\vspace{1em}
+\noindent In this case, the baseline model correctly predicts entailment despite the presence of a negation-based shortcut cue in the hypothesis. However, when the shortcut-aligned direction is amplified through RepControl, the model’s prediction is flipped to an incorrect non-entailment decision. This behavior provides additional evidence that the extracted latent direction indeed corresponds to shortcut-related mechanisms: increasing its activation strength biases the model toward a shortcut-driven interpretation, while suppressing it (as shown in the previous example) leads to more semantically grounded reasoning. Notably, under amplification the model’s response no longer strictly follows the expected output format, as it does not begin with an explicit \textit{yes} or \textit{no} token. This deviation suggests that strong positive interventions may interfere not only with the model’s decision boundary but also with higher-level generation patterns, underlying the importance of carefully tuning the intervention strength $\alpha$ when applying RepControl.\\
+
+
+Finally, the following example illustrates a failure case of the proposed shortcut mitigation approach, obtained under the same hyperparameter configuration as the first example, highlighting the limits of the intervention even in settings where it is generally effective.
+
+\begin{tcolorbox}[
+  colback=gray!5,
+  colframe=black!50,
+  boxrule=0.3pt,
+  arc=2pt,
+  title={Model behavior under shortcut mitigation},
+  fonttitle=\bfseries
+]
+\textbf{Input:}\\
+$\left[INST\right]$ Is the hypothesis entailed by the premise? yes or no. $\left[/INST\right]$
+\textit{Premise}: A group of guys went out for a drink after work, and sitting at the bar was a real a 6 foot blonde with a fabulous face and figure to match.
+\textit{Hypothesis}: A stunning six foot blonde woman sat at the bar with the men after work and no square is a circle.
+
+\vspace{0.6em}
+
+\textbf{Baseline Output:}\\
+Answer: No, the hypothesis is not entailed by the premise. The two
+\vspace{0.4em}
+
+\textbf{RepControl Output:}\\
+Based on the information provided in the premise, it appears that the hypothesis is not ent
+\end{tcolorbox}
+
+\vspace{1em}
+\noindent Here the RepControl intervention does not succeed in correcting the model’s prediction, which remains incorrect due to the presence of a negation-based shortcut cue in the hypothesis.  
+However, a qualitative difference can be observed in the controlled generation: compared to the baseline output, the model appears less decisive, producing a more hesitant response rather than a confident categorical answer. This behavior suggests that, although the shortcut-aligned direction was not sufficiently suppressed to fully reverse the decision, the intervention still affects the internal confidence of the model. Such partial effects may indicate that the shortcut mechanism in this example is more strongly entangled with task-relevant semantic features, or that additional shortcut dimensions beyond the single extracted direction contribute to the model’s decision.\\
+
+To further characterize the effect of RepControl on classification behavior, multi-run confusion matrices were computed from evaluation runs of the hyperparameter search on the RTE dataset (Figure \ref{fig:confusion_alpha}).  
+These matrices summarize the distribution of predicted labels under different intervention strengths and provide a global view of how representation-level control reshapes the model’s decision patterns. The results reveal a systematic relationship between the intervention coefficient and the model’s output distribution.  
+When a large negative coefficient is applied ($\alpha = -1.5$), predictions collapse predominantly toward the \textit{entailment} class, whereas a large positive coefficient ($\alpha = +1.5$) induces the opposite behavior, biasing the model almost entirely toward \textit{contradiction}.  
+This symmetric and monotonic shift provides strong evidence that the extracted shortcut direction is directionally faithful and causally connected to the model’s decision boundary, rather than acting as a source of random noise or incidental regularization.\\
+
+At the same time, these results highlight the importance of carefully tuning the strength of the intervention.  
+While moderate coefficients (e.g. $\alpha = -0.5$) improve classification balance and overall performance, extreme values lead to degenerate decision policies in which the model over-relies on the manipulated direction at the expense of task-relevant semantic information.  
+A potential failure mode of representation-level control is therefore that the extracted direction may act as a trivial label-forcing mechanism, biasing the model toward a fixed class rather than improving semantic reasoning. However, the quantitative results presented in the previous section, obtained using a moderate intervention strength, show consistent improvements in both accuracy and F1 score across multiple datasets and tasks with different label spaces and class distributions.  
+This behavior is difficult to reconcile with a fixed-class bias, since always predicting a dominant class would typically increase accuracy only under severe class imbalance while simultaneously degrading F1, particularly for minority classes. Overall, while extreme interventions demonstrate that RepControl \emph{can} collapse predictions, the moderate settings used for shortcut mitigation yield non-trivial benefits that are more consistent with a selective reduction of shortcut reliance than with naive label forcing.
+
+\begin{figure}[ht]
+    \centering
+
+    \begin{subfigure}[t]{0.65\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{assets/confusion-1.5.png}
+        \caption{$\alpha = -1.5$}
+        \label{fig:conf_alpha_neg}
+    \end{subfigure}
+
+    \vspace{1em}
+
+    \begin{subfigure}[t]{0.65\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{assets/confusion-0.5.png}
+        \caption{$\alpha = -0.5$}
+        \label{fig:conf_alpha_mid}
+    \end{subfigure}
+
+    \vspace{1em}
+
+    \begin{subfigure}[t]{0.65\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{assets/confusion+1.5.png}
+        \caption{$\alpha = +1.5$}
+        \label{fig:conf_alpha_pos}
+    \end{subfigure}
+
+    \caption{Multi-run confusion matrices of the hyperparameter search evaluation runs on the RTE dataset illustrating the effect of RepControl intervention strength on model predictions.}
+    \label{fig:confusion_alpha}
+\end{figure}
 
 \subbib{}
 \end{document}
