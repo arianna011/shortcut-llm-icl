@@ -546,16 +546,6 @@ Based on the information provided in the premise, it is not clear whether the hy
 Nevertheless, a qualitative difference can be observed in the controlled generation: compared to the baseline output, the model appears less decisive, producing a more tentative response rather than a confident categorical judgment. This behavior suggests that, although the shortcut-aligned direction was not sufficiently suppressed to fully reverse the decision, the intervention still affects the model’s internal confidence.  
 Such partial effects may indicate that, in this instance, shortcut-related features are more strongly entangled with task-relevant semantic information, or that additional shortcut dimensions beyond the single extracted direction contribute to the model’s decision process.\\
 
-To further characterize the effect of RepControl on classification behavior, multi-run confusion matrices were computed from evaluation runs of the hyperparameter search on the RTE dataset (Figure \ref{fig:confusion_alpha}).  
-These matrices summarize the distribution of predicted labels under different intervention strengths and provide a global view of how representation-level control reshapes the model’s decision patterns. The results reveal a systematic relationship between the intervention coefficient and the model’s output distribution.  
-When a large negative coefficient is applied ($\alpha = -1.5$), predictions collapse predominantly toward the \textit{entailment} class, whereas a large positive coefficient ($\alpha = +1.5$) induces the opposite behavior, biasing the model almost entirely toward \textit{contradiction}.  
-This symmetric and monotonic shift provides strong evidence that the extracted shortcut direction is directionally faithful and causally connected to the model’s decision boundary, rather than acting as a source of random noise or incidental regularization.\\
-
-At the same time, these results highlight the importance of carefully tuning the strength of the intervention.  
-While moderate coefficients (e.g. $\alpha = -0.5$) improve classification balance and overall performance, extreme values lead to degenerate decision policies in which the model over-relies on the manipulated direction at the expense of task-relevant semantic information.  
-A potential failure mode of representation-level control is therefore that the extracted direction may act as a trivial label-forcing mechanism, biasing the model toward a fixed class rather than improving semantic reasoning. However, the quantitative results presented in the previous section, obtained using a moderate intervention strength, show consistent improvements in both accuracy and F1 score across multiple datasets and tasks with different label spaces and class distributions.  
-This behavior is difficult to reconcile with a fixed-class bias, since always predicting a dominant class would typically increase accuracy only under severe class imbalance while simultaneously degrading F1, particularly for minority classes. Overall, while extreme interventions demonstrate that RepControl \emph{can} collapse predictions, the moderate settings used for shortcut mitigation yield non-trivial benefits that are more consistent with a selective reduction of shortcut reliance than with naive label forcing.\\
-
 \begin{figure}[ht]
     \centering
 
@@ -588,7 +578,73 @@ This behavior is difficult to reconcile with a fixed-class bias, since always pr
     \label{fig:confusion_alpha}
 \end{figure}
 
-\noindent \textbf{Token-level attributions.} 
+To further characterize the effect of RepControl on classification behavior, multi-run confusion matrices were computed from evaluation runs of the hyperparameter search on the RTE dataset (Figure \ref{fig:confusion_alpha}).  
+These matrices summarize the distribution of predicted labels under different intervention strengths and provide a global view of how representation-level control reshapes the model’s decision patterns. The results reveal a systematic relationship between the intervention coefficient and the model’s output distribution.  
+When a large negative coefficient is applied ($\alpha = -1.5$), predictions collapse predominantly toward the \textit{entailment} class, whereas a large positive coefficient ($\alpha = +1.5$) induces the opposite behavior, biasing the model almost entirely toward \textit{contradiction}.  
+This symmetric and monotonic shift provides strong evidence that the extracted shortcut direction is directionally faithful and causally connected to the model’s decision boundary, rather than acting as a source of random noise or incidental regularization.\\
+
+At the same time, these results highlight the importance of carefully tuning the strength of the intervention.  
+While moderate coefficients (e.g. $\alpha = -0.5$) improve classification balance and overall performance, extreme values lead to degenerate decision policies in which the model over-relies on the manipulated direction at the expense of task-relevant semantic information.  
+A potential failure mode of representation-level control is therefore that the extracted direction may act as a trivial label-forcing mechanism, biasing the model toward a fixed class rather than improving semantic reasoning. However, the quantitative results presented in the previous section, obtained using a moderate intervention strength, show consistent improvements in both accuracy and F1 score across multiple datasets and tasks with different label spaces and class distributions.  
+This behavior is difficult to reconcile with a fixed-class bias, since always predicting a dominant class would typically increase accuracy only under severe class imbalance while simultaneously degrading F1, particularly for minority classes. Overall, while extreme interventions demonstrate that RepControl \emph{can} collapse predictions, the moderate settings used for shortcut mitigation yield non-trivial benefits that are more consistent with a selective reduction of shortcut reliance than with naive label forcing.\\
+
+\noindent \textbf{Token-level attribution via Integrated Gradients.}
+To analyze how individual input tokens contribute to the model’s predictions and how these contributions change under RepControl intervention, the \textit{Integrated Gradients} (IG) attribution method was employed.
+Integrated Gradients is a gradient-based interpretability technique that assigns an importance score to each input feature by integrating the gradients of the model’s output with respect to the input along a straight-line path between a baseline input (i.e. a reference point with minimal semantic content) and the actual input \citep{sundararajan2017axiomaticattributiondeepnetworks}.\\
+
+Formally, given a model $F(\cdot)$, an input embedding $x \in \mathbb{R}^{T \times d}$ (with $T$ tokens and embedding dimension $d$) and a baseline embedding $x'$, the Integrated Gradients attribution for the $i$-th input dimension is defined as:
+\begin{equation}
+\mathrm{IG}_i(x) = (x_i - x'_i) \cdot \int_{\alpha=0}^{1} 
+\frac{\partial F\!\left(x' + \alpha (x - x')\right)}{\partial x_i} \, d\alpha
+\end{equation}
+
+In practice, the integral is approximated via a Riemann sum over $m$ discrete interpolation steps:
+\begin{equation}
+\mathrm{IG}_i(x) \approx (x_i - x'_i) \cdot \frac{1}{m} 
+\sum_{k=1}^{m} 
+\frac{\partial F\!\left(x' + \frac{k}{m} (x - x')\right)}{\partial x_i}
+\end{equation}
+
+In this work, the baseline $x'$ is chosen as the embedding of the beginning-of-sequence token, which provides a stable and semantically neutral reference compared to an all-zero embedding.
+At each interpolation step, gradients are computed with respect to the embedding vectors, and the resulting attributions are summed across the embedding dimension to obtain a scalar importance score for each token:
+\begin{equation}
+\mathrm{IG}_{\text{token}}(t) = \sum_{j=1}^{d} \mathrm{IG}_{t,j}
+\end{equation}
+
+Specifically, attributions are calculated for the logit corresponding to a chosen class (e.g. \textit{entailment}), allowing the analysis to focus on which tokens contribute to supporting that decision. 
+This choice is particularly relevant in the context of shortcut learning, where spurious cues are expected to disproportionately influence the confidence of specific labels.  By keeping the target label fixed before and after RepControl intervention, changes in token attributions can be directly interpreted as shifts in the internal evidence used by the model. This enables a fine-grained assessment of whether shortcut mitigation suppresses shortcut-aligned token importance while preserving semantically meaningful contributions.\\
+
+\begin{figure}[ht]
+    \centering
+
+    \begin{subfigure}[t]{1\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{assets/attributions_red.png}
+        \caption{Top 25 tokens ranked by the absolute change in Integrated Gradients attribution between the baseline model and the RepControl-intervened model.}
+    \end{subfigure}
+
+    \vspace{1em}
+
+    \begin{subfigure}[t]{1\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{assets/change_importance.png}
+        \caption{Heatmap of token-level attribution differences (RepControl minus baseline), highlighting how RepControl redistributes importance across the input sequence.}
+    \end{subfigure}
+
+    \caption{Visualization of the token-level attributions computed via Integrated Gradients for the class \textit{entailment} with input "$\left[INST\right]$ Is the hypothesis entailed by the premise? yes or no. $\left[/INST\right]$
+\textit{Premise}: Fruit, vegetables, electronics, and a little bit of everything else is on sale here. 
+\textit{Hypothesis}: You can buy all sorts of products and food here and green is not red."}
+    \label{fig:attributions}
+\end{figure}
+
+Figure \ref{fig:attributions} reports the token-level attributions computed via Integrated Gradients for the \textit{entailment} class on the first qualitative example discussed in the previous section, comparing the baseline model with its RepControl-modified counterpart.  
+In the baseline setting, a large fraction of the attribution mass is assigned to shortcut-related lexical cues, most notably the token \textit{``red''}, which appears in the tautological negation phrase appended to the hypothesis.  
+This indicates that the model relies heavily on the presence of shortcut-related tokens when supporting the entailment decision, rather than grounding its prediction in the semantic overlap between premise and hypothesis. After applying RepControl with a negative intervention strength, the importance of shortcut-aligned tokens is substantially reduced.  
+In particular, the attribution associated with \textit{``red''} and with the negation-related token \textit{``no''} decreases markedly, while the relative contribution of semantically meaningful tokens such as \textit{``vegetables''} and \textit{``products''} slightly increases, even though their overall attribution values remain negative. This redistribution suggests that suppressing the shortcut-aligned latent direction encourages the model to rely less on superficial lexical cues and more on content-bearing elements of the input when forming its decision. At the same time, the attribution maps reveal non-negligible noise introduced by the intervention. Some punctuation symbols (e.g. \textit{``:''}, \textit{``.''}) receive increased attribution despite carrying no semantic relevance for the entailment relation, and the negative contribution associated with the token \textit{``green''} is further amplified rather than fully suppressed.\\
+
+While these results provide evidence that RepControl can reduce the influence of dominant shortcut cues, they also highlight several limitations of the proposed approach. First, the redistribution of attribution mass is not perfectly aligned with semantic relevance: some tokens that are logically irrelevant to the entailment relation, such as punctuation symbols, receive increased importance after intervention, indicating that RepControl may introduce secondary artifacts in the attribution patterns. Moreover, the fact that certain shortcut-related tokens retain or even increase their influence suggests that shortcut reliance is not fully captured by a single linear direction.  
+Instead, shortcut mechanisms are likely distributed across multiple entangled features in the representation space, making them only partially suppressible through linear interventions. As a result, RepControl appears to attenuate the dominant shortcut signal without completely disentangling it from task-relevant semantic representations. More generally, these observations underline a key limitation of representation-level control methods based on linear directions: while effective at modulating coarse-grained behavioral tendencies, they provide only an approximate handle on the complex and highly superposed internal representations of LLMs.\\
+
 % + non linearity?
 
 \subbib{}
