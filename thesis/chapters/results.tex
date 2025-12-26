@@ -645,7 +645,81 @@ In particular, the attribution associated with \textit{``red''} and with the neg
 While these results provide evidence that RepControl can reduce the influence of dominant shortcut cues, they also highlight several limitations of the proposed approach. First, the redistribution of attribution mass is not perfectly aligned with semantic relevance: some tokens that are logically irrelevant to the entailment relation, such as punctuation symbols, receive increased importance after intervention, indicating that RepControl may introduce secondary artifacts in the attribution patterns. Moreover, the fact that certain shortcut-related tokens retain or even increase their influence suggests that shortcut reliance is not fully captured by a single linear direction.  
 Instead, shortcut mechanisms are likely distributed across multiple entangled features in the representation space, making them only partially suppressible through linear interventions. As a result, RepControl appears to attenuate the dominant shortcut signal without completely disentangling it from task-relevant semantic representations. More generally, these observations underline a key limitation of representation-level control methods based on linear directions: while effective at modulating coarse-grained behavioral tendencies, they provide only an approximate handle on the complex and highly superposed internal representations of LLMs.\\
 
-% + non linearity?
+\noindent \textbf{Non-Linearity Analysis.} To better understand the observed limitations of the proposed linear shortcut mitigation framework, we analyze the \emph{intrinsic dimensionality} (ID) of the model’s hidden representations across different transformer layers.
+Intrinsic dimensionality refers to the minimum number of degrees of freedom required to describe the data locally, that is, the dimension of the underlying manifold on which the representations lie, independently of the ambient embedding space dimension. If shortcut-related representations are organized along highly curved or non-linear manifolds, linear methods such as PCA may provide only an approximate characterization, potentially limiting the effectiveness of extracting a single shortcut direction.\\
+
+To this end, the intrinsic dimensionality is estimated using both a linear and a non-linear approach.
+In the linear case, ID is approximated as the number of principal components required to explain 95\% of the total variance of the representations.
+This measure captures how many orthogonal linear directions are needed to reconstruct the data, but it implicitly assumes that the underlying structure is approximately linear. In contrast, a non-linear estimate of intrinsic dimensionality is obtained using the Two Nearest Neighbors (TwoNN) method \citep{Facco_2017}.
+TwoNN is based on minimal neighborhood information: for each data point, it considers the ratio between the distances to its first and second nearest neighbors.
+Under mild assumptions, the distribution of these ratios depends only on the intrinsic dimensionality of the data manifold, allowing ID to be estimated without assuming linearity or constructing a global embedding of the data.
+As a result, TwoNN is well-suited to detect low-dimensional but curved structures that may not be well captured by PCA.\\
+
+By comparing the linear (PCA-based) and non-linear (TwoNN-based) intrinsic dimensionality estimates, we assess whether hidden representations at different layers are well approximated by locally linear subspaces or instead exhibit significant non-linear structure.
+Large discrepancies between the two estimates indicate layers where the representation geometry is highly non-linear, suggesting that shortcut-related features may be distributed across curved manifolds rather than concentrated along a single linear direction. The results reported in Table \ref{tab:intrinsic_dim_heatmap} are obtained from the hidden representations produced by the Mistral 7B Instruct model for 128 \textit{clean} and \textit{dirty} prompts derived from the ShortcutSuite dataset targeting the Negation shortcut type.\\
+
+\begin{table}[ht]
+\centering
+\small
+\setlength{\tabcolsep}{3.8pt}
+\renewcommand{\arraystretch}{1.15}
+
+\begin{tabular}{ccccc|cccc}
+\toprule
+\multirow{2}{*}{Layer} &
+\multicolumn{4}{c|}{\textbf{Clean Representations}} &
+\multicolumn{4}{c}{\textbf{Dirty Representations}} \\
+
+\cmidrule(lr){2-5} \cmidrule(lr){6-9}
+
+ & PCA & TwoNN & PC1 var & PCA/TwoNN
+ & PCA & TwoNN & PC1 var & PCA/TwoNN \\
+
+\midrule
+-1  & 55 & 16.47 & 0.191 & \ratioheat{3.34}
+    & 58 & 14.95 & 0.182 & \ratioheat{3.88} \\
+
+-5  & 89 & 19.79 & 0.096 & \ratioheat{4.50}
+    & 89 & 19.39 & 0.099 & \ratioheat{4.59} \\
+
+-10 & 96 & 20.74 & 0.133 & \ratioheat{4.63}
+    & 97 & 24.85 & 0.133 & \ratioheat{3.90} \\
+
+-15 & 98 & 20.22 & 0.122 & \ratioheat{4.85}
+    & 99 & 25.30 & 0.117 & \ratioheat{3.91} \\
+
+-20 & 97 & 20.73 & 0.103 & \ratioheat{4.68}
+    & 97 & 18.65 & 0.101 & \ratioheat{5.20} \\
+
+-25 & 99 & 22.49 & 0.102 & \ratioheat{4.40}
+    & 100 & 19.95 & 0.100 & \ratioheat{5.01} \\
+
+-31 & 102 & 28.69 & 0.102 & \ratioheat{3.56}
+    & 103 & 25.80 & 0.101 & \ratioheat{3.99} \\
+
+\bottomrule
+\end{tabular}
+
+\vspace{6pt}
+\caption{Intrinsic dimensionality estimates for clean and dirty representations across transformer layers, computed using linear (\textit{PCA}) and non-linear (\textit{TwoNN}) methods. 
+\textit{PC1 var} denotes the fraction of variance explained by the first principal component. 
+The heatmap encodes the ratio between linear and non-linear intrinsic dimensionality (\textit{PCA/TwoNN}), highlighting the degree of curvature of the underlying representation manifold.}
+\label{tab:intrinsic_dim_heatmap}
+\end{table}
+
+Across all examined layers, both clean and dirty representations exhibit a large gap between the dimensionality required to explain $95\%$ of the variance via PCA and the intrinsic dimensionality estimated by the non-linear TwoNN method.
+In particular, PCA dimensionality ranges from approximately $55$ in the final layer to over $100$ in earlier layers, while TwoNN consistently estimates a much lower intrinsic dimensionality, typically between $15$ and $30$.
+The resulting PCA/TwoNN ratios, highlighted in the heatmap, indicate that shortcut-related representations lie on low-dimensional but strongly curved manifolds, rather than on approximately linear subspaces. An additional informative signal is provided by the variance explained by the first principal component, which accounts for only a limited fraction of the total variance, with PC1 values ranging roughly between $10\%$ and $19\%$.
+This suggests that, although shortcut-related representations are intrinsically low-dimensional, they are not dominated by a single linear direction. Instead, the variance is distributed across multiple correlated components, consistent with the presence of feature superposition and non-linear structure in the residual stream. This observation explains why PCA-based extraction of a shortcut direction can be effective in aggregate, by capturing a prominent axis of variation, while still failing to fully isolate shortcut mechanisms at the level of individual examples.\\
+
+Beyond the overall gap between linear and non-linear dimensionality estimates, Table \ref{tab:intrinsic_dim_heatmap} reveals a systematic difference in how geometric complexity evolves across layers for clean versus dirty representations.
+For clean representations, the PCA / TwoNN ratio exhibits a relatively smooth and structured trend: non-linearity increases from the early layers toward the mid layers (approximately $-31$ to $-15$), before decreasing again in late layers.
+This pattern suggests a staged representational process in which shortcut-free inputs are progressively transformed into increasingly abstract but structured manifolds, before being consolidated into more stable configurations closer to the input.
+Such behavior is consistent with prior findings that intermediate layers in transformer models encode richer and more compositional abstractions, while both early and late layers tend to exhibit more constrained geometries. In contrast, dirty representations display a markedly less regular behavior. While their average intrinsic dimensionality remains comparable to that of clean representations, the PCA/TwoNN ratio fluctuates substantially across layers, with pronounced peaks in curvature at specific depths (e.g. around layers $-20$ and $-25$). These localized spikes may indicate that shortcut cues induce irregular distortions of the representational manifold, increasing its curvature in a layer-dependent and input-dependent manner rather than following a smooth transformation trajectory. This “chaotic” geometric behavior suggests that shortcut learning does not merely strengthen an existing low-dimensional feature, but instead perturbs the internal representation in ways that are less globally organized and more entangled with other semantic features, biasing the model’s traversal of an underlying representational manifold, rather than by activating isolated, linearly separable features.\\
+
+From the perspective of shortcut mitigation, this distinction is critical. Linear representation control methods such as PCA-based RepControl are naturally better suited to structured, approximately linear manifolds, as observed for clean representations and for certain layer ranges in dirty ones.
+However, the presence of highly curved, layer-specific distortions in shortcut-contaminated representations limits the effectiveness of a single global linear direction, helping to explain both the variability in mitigation performance across layers and the existence of failure cases observed in the qualitative analysis. These findings reinforce the interpretation that shortcut learning introduces localized non-linear deformations in the model’s internal geometry, motivating future work on layer-adaptive or non-linear representation control mechanisms.
+
 
 \subbib{}
 \end{document}

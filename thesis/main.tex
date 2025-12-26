@@ -6,7 +6,7 @@
 \usepackage[autostyle]{csquotes}
 \MakeOuterQuote{"}
 \usepackage[english]{babel}
-\usepackage[dvipsnames]{xcolor}
+\usepackage[dvipsnames, table]{xcolor}
 \usepackage[linktocpage,pdfusetitle,colorlinks=true,linkcolor=BrickRed,citecolor=BrickRed,urlcolor=BrickRed]{hyperref}
 \usepackage{amssymb}
 \usepackage{overpic}
@@ -34,6 +34,8 @@
 \usepackage{tabularx}
 \usepackage{makecell}
 \usepackage{colortbl}
+\usepackage{pgfplotstable}
+\usepackage{pgfplots}
 
 %% Add icons to make (1) points
 \usepackage{pifont}
@@ -44,6 +46,30 @@
 \newcommand{\tickrule}{%
 \midrule[1.5pt]%
 }
+
+\newcommand{\ratioheat}[1]{%
+\pgfmathsetmacro{\val}{#1}%
+\ifdim \val pt < 4pt
+  \cellcolor{low!35}{#1}%
+\else\ifdim \val pt < 5pt
+  \cellcolor{mid!50}{#1}%
+\else
+  \cellcolor{high!45}{#1}%
+\fi\fi
+}
+
+% % Low emphasis (near-linear / low curvature)
+% \definecolor{low}{RGB}{217,240,211}   % light green
+
+% % Medium emphasis
+% \definecolor{mid}{RGB}{255,224,178}   % soft orange
+
+% % High emphasis (high curvature / strong non-linearity)
+% \definecolor{high}{RGB}{244,163,163}  % soft red
+
+\definecolor{mid}{RGB}{49,130,189}     % blue
+\definecolor{low}{RGB}{222,235,247}    % light blue
+\definecolor{high}{RGB}{178,24,43}     % red
 
 
 % Fix bibliography in subfiles: https://tex.stackexchange.com/a/284908
