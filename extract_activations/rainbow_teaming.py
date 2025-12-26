@@ -575,8 +575,6 @@ class RainbowConfig:
 # if __name__ == "__main__":
 #     random.seed(42)
 
-#     API = "AIzaSyBuqsCfDar-hHfpFGWmTI7jawPHEwgsnH4"
-
 #     schema = DescriptorSchema(features=[
 #     Feature(name="shortcut", values=["+", "-"]),
 #     Feature(name="length", values=["short", "medium", "long"])
