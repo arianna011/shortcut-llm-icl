@@ -38,28 +38,54 @@ More formally, the authors of RepE \citep{zou2025representationengineeringtopdow
 
 \noindent\textbf{Step 1.} Designing a suitable prompt template to feed the target LLM in order to stimulate the neural activity to be extracted is a crucial step in the RepReading pipeline. The model input must both isolate and fully capture the desired concept or function within the corresponding produced representations. To extract the model's understanding of a given concept $c$, the proposed template $T_c$ for decoder-based LLMs is: \\
 
-\begin{tcolorbox}[colback=gray!5,colframe=gray!50,boxrule=0.2pt,arc=2pt]
-\texttt{Consider the amount of \textcolor{red!50}{<concept>} in the following: }\\[2pt]
-\texttt{\textcolor{blue!50}{<stimulus>}}\\
-\texttt{The amount of \textcolor{red!50}{<concept>} is}
+\definecolor{accent}{RGB}{60,90,140} % muted academic blue
+
+\begin{tcolorbox}[
+  colback=white,
+  colframe=accent!40,
+  boxrule=0.4pt,
+  arc=2pt
+]
+\ttfamily
+Consider the amount of \textcolor{accent}{<concept>} in the following:\\
+\textcolor{accent}{<stimulus>}\\
+The amount of \textcolor{accent}{<concept>} is
 \end{tcolorbox}
 
 \noindent Here, the \textit{stimulus} consists in unlabeled or self-generated statements that vary in the intensity of the concept's presence. This setup allows the extraction of the model's declarative knowledge about specific semantic areas. For instance, if the concept $c$ corresponds to an emotion (e.g. "anger"), the model is stimulated to estimate its presence in a given scenario, thereby activating specific patterns in its hidden representations.\\
 
-To elicit the procedural knowledge related to a function $f$, instead, two contrastive task-related prompts are required: an \textit{experimental} prompt that induces the model to execute the function $f$ and a \textit{reference} prompt that does not. They are used to generate, respectively, the templates $T^+_f$ and $T^-_f$, which share the following structure:\\
+To elicit the procedural knowledge related to a function $f$, instead, two contrastive task-related prompts are required: an \textit{experimental} prompt that induces the model to execute the function $f$ and a \textit{reference} prompt that does not. They are used to generate, respectively, the templates $T^+_f$ and $T^-_f$, which share the following structure:
 
-\begin{tcolorbox}[colback=gray!5,colframe=gray!50,boxrule=0.2pt,arc=2pt]
-\texttt{<USER TAG> \textcolor{blue!50}{<instruction>} \textcolor{red!50}{<experimental/reference prompt>} }\\[2pt]
-\texttt{<ASSISTANT TAG> \textcolor{blue!50}{<output>}}
+\begin{tcolorbox}[
+  colback=white,
+  colframe=accent!40,
+  boxrule=0.4pt,
+  arc=2pt
+]
+\ttfamily
+\texttt{<USER TAG> \textcolor{accent}{<instruction>} \textcolor{accent}{<experimental/reference prompt>} }\\[2pt]
+\texttt{<ASSISTANT TAG> \textcolor{accent}{<output>}}
 \end{tcolorbox}
 
 \noindent In this case, the \textit{stimulus} is composed of the \textit{<instruction>} and \textit{<output>} fields, which can be derived from instruction-tuning datasets and do not contain explicit labels related to the target function, thus making the procedure unsupervised. For example, if the function $f$ corresponds to "power-seeking", the two contrastive prompts could be:\\
 
-\begin{tcolorbox}[colback=white,colframe=blue!40!black!30,boxrule=0.2pt,arc=2pt]
-\texttt{USER: \textcolor{blue!50}{Pretend you're an} \textcolor{red!50}{ambitious, power-seeking} \textcolor{blue!50}{person. Tell me what you want to do.}}\\[2pt]
-\texttt{ASSISTANT: \textcolor{blue!50}{<output>}}
-\end{tcolorbox} and \begin{tcolorbox} [colback=white,colframe=blue!40!black!30,boxrule=0.2pt,arc=2pt] \texttt{USER: \textcolor{blue!50}{Pretend you're a} \textcolor{red!50}{docile, power-aversive} \textcolor{blue!50}{person. Tell me what you want to do.}}\\[2pt]
-\texttt{ASSISTANT: \textcolor{blue!50}{<output>}}
+\begin{tcolorbox}[
+  colback=white,
+  colframe=gray!40,
+  boxrule=0.4pt,
+  arc=2pt
+]
+\texttt{USER: Pretend you're an \textbf{ambitious, power-seeking} person. Tell me what you want to do.}\\[2pt]
+\texttt{ASSISTANT:}
+\end{tcolorbox} and 
+
+\begin{tcolorbox}[
+  colback=white,
+  colframe=gray!40,
+  boxrule=0.4pt,
+  arc=2pt
+] \texttt{USER: Pretend you're a \textbf{docile, power-aversive} \texttt{person. Tell me what you want to do.}}\\[2pt]
+\texttt{ASSISTANT:}
 \end{tcolorbox}
 
 \vspace{1em} 
@@ -82,7 +108,7 @@ To gather the activations corresponding to a function $f$, instead, all tokens f
 
 \noindent\textbf{Step 3.} Finally, a latent direction identifying the target concept or function is estimated from the collected neural activity of the LLM by leveraging a linear model. Both supervised approaches (e.g. linear probing, difference between cluster means) and unsupervised ones (e.g. PCA, K-means) can be employed, although the original RepE paper primarily adopts Principal Component Analysis (PCA).\\
 
-In particular, to construct the input for PCA:
+\noindent In particular, to construct the input for PCA:
 \begin{itemize}
     \item the set of input stimuli $S$ is divided into pairs $(s_i, s_{i+1})$, where each pair ideally differs only in the presence or intensity of the target concept or function;
     \item hidden states at the selected token position are collected for each stimulus in every pair, generating a collection $H = [\{H(s_0), H(s_1)\},\ \{H(s_2), H(s_3)\}, ...]$;
@@ -107,8 +133,8 @@ The authors of RepE \citep{zou2025representationengineeringtopdownapproach} intr
 
 \begin{itemize}
     \item \textit{Reading Vector}: the reading vector obtained through a RepReading method such as LAT (presented in Section \ref{subsec:repreading}) captures the model's internal representation of a concept or function and can be therefore used to control the intensity of their presence in the model's activations. However, since it is precomputed before the actual intervention at inference time, it constitutes a stimulus-indepedent approach, meaning that all representations are perturbed towards the same direction regardless of the input;
-    \item \textit{Contrast Vector}: an alternative approach consists in running a pair of contrastive prompts through the target LLM at intervention time to produce two representantions and take their difference, yielding a stimulus-dependent contrast vector. While method can produce more accurate control, it introduces computational-overhead due to the additional forward passes required at inference time;
-    \item \textit{Low-Rank Representation Adaptation (LoRRA)}: a more complex approach consists in attaching low-rank adapters to the target model's attention weights and tuning them by minimizing a reconstruction loss between the current and target representations, computed as $r^t_l = R(M, l, x_i) + \alpha v_l^c + \beta v_l^r$ for each layer $l$, where $v_l^c = R(M, l, x_i^+) - R(M, l, x_i^-)$ is a contrast vector obtained from contrastive inputs $x_i^+$ and $x_i^-$, and $v_l^r$ is an optional reading vector. In this case, the operands correspond to the tuned low-rank attention weight matrices.
+    \item \textit{Contrast Vector}: an alternative approach consists in running a pair of contrastive prompts through the target LLM at intervention time to produce two representantions and take their difference, yielding a stimulus-dependent contrast vector. While this method can produce more accurate control, it introduces computational-overhead due to the additional forward passes required at inference time;
+    \item \textit{Low-Rank Representation Adaptation (LoRRA)}: a more complex approach consists in attaching low-rank adapters to the target model's attention weights and tuning them by minimizing a reconstruction loss between the current and target representations, which are computed as $r^t_l = R(M, l, x_i) + \alpha v_l^c + \beta v_l^r$ for each layer $l$, where $v_l^c = R(M, l, x_i^+) - R(M, l, x_i^-)$ is a contrast vector obtained from contrastive inputs $x_i^+$ and $x_i^-$, and $v_l^r$ is an optional reading vector. In this case, the operands correspond to the tuned low-rank attention weight matrices.
 \end{itemize}
 
 \vspace{1em} 
@@ -133,9 +159,7 @@ In the context of AI models, honesty refers to the consistency between a model's
 
 \noindent First, the authors demonstrated that LLMs possess an internal and consistent concept of truthfulness that is not always aligned with their generations. By applying the LAT technique, they extracted a "truthfulness" direction from datasets of true-false statements and showed that it is able to achieve superior performance on standard question-answering benchmarks compared to few-shot prompting. Moreover, since the direction was derived from diverse data sources, its strong performance suggests a high degree of generalizability.\\
 
-\noindent By comparing LLM predictions based on the truthfulness LAT direction and zero-shot model performance, the authors concluded that large models possess reliable internal representations of truth but often produce outputs that deviate from them, exhibiting a form of \textit{dishonest} behavior. A simple lie detector was constructed by summing the negated honesty scores across selected hidden layers at each token position of a given statement. It successfully identified various forms of falsehoods, hallucination and misleading information. The LAT reading vector was also employed as a classifier of true and false statements on an held-out in-distribution test set, achieving an accuracy of approximately 90\%. A marked contrast was observed in the neural activations associated to honest versus dishonest generations (e.g. "The president of the United states in 2018 is Donald Trump" versus "The president of the United States in 2030 is Elizabeth Warren").\\
-
-\noindent Furthermore, by adding the honesty vector to the LLM activations via RepControl techniques, the authors succesfully steered model responses toward more or less honest answers, demonstrating a strong counterfactual effect and improving the baseline zero-shot performance on TruthfulQA MC1 by up to 19\%.\\
+\noindent By comparing LLM predictions based on the truthfulness LAT direction and zero-shot model performance, the authors concluded that large models possess reliable internal representations of truth but often produce outputs that deviate from them, exhibiting a form of \textit{dishonest} behavior. A simple lie detector was constructed by summing the negated honesty scores across selected hidden layers at each token position of a given statement. It successfully identified various forms of falsehoods, hallucination and misleading information. The LAT reading vector was also employed as a classifier of true and false statements on an held-out in-distribution test set, achieving an accuracy of approximately 90\%. A marked contrast was observed in the neural activations associated to honest versus dishonest generations (e.g. "The president of the United states in 2018 is Donald Trump" versus "The president of the United States in 2030 is Elizabeth Warren"). Furthermore, by adding the honesty vector to the LLM activations via RepControl techniques, the authors succesfully steered model responses toward more or less honest answers, demonstrating a strong counterfactual effect and improving the baseline zero-shot performance on the TruthfulQA MC1 task by up to 19\%.\\
 
 Other examples presented in the paper included experiments on ethically critical themes such as immorality and power-seeking tendencies of LLMs, as well as studies on emotions, bias and fairness, memorization, knowledge and model editing. This broad range of application areas highlights the vast potential of the RepE framework and served as one of the motivations for its adoption in the present work on shorcut learning detection and mitigation.
 
@@ -144,7 +168,7 @@ Other examples presented in the paper included experiments on ethically critical
 
 As mentioned in Section \ref{sec:shortcutlearning}, \textit{shortcut learning} refers to the tendency of models to rely on spurious or superficial features that correlate with the target label rather than on the underlying causal or semantic cues. However, when such behavior is not due to physical limitations in the models capacity, the model itself may be implicitely aware of it. Just as Large Language Models (LLMs) have been shown to "lie", meaning they can generate false statements even when maintaining an internally coherent representation of truth (Section \ref{subsec:honesty}), they may also activate specific patterns within their hidden states when relying on shortcut-based reasoning. In the case of honesty, previous work  demonstrated that information about truthfulness is encoded into the activations of LLMs, suggesting that models "know when they're lying" \citep{azaria2023internalstatellmknows}. By analogy, they may also "know when they're taking a shortcut".\\
 
-If this hypothesis holds, the Representation Engineering (RepE; Section \ref{sec:repe}) framework provides a natural foundation for investigating such phenomena. By operating directly in the representational space of LLMs, RepE allows both the extraction of latent directions corresponding to shortcut mechanisms (\textit{RepReading}) and their targeted manipulation (\textit{RepControl}). The present work adapts this framework to the detection and mitigation of shortcut learning in LLMs under In-Context Learning (ICL), aiming to expose and neutralize shortcut-driven behavior without altering the model’s parameters.
+\noindent If this hypothesis holds, the Representation Engineering framework (Section \ref{sec:repe}) provides a natural foundation for investigating such phenomena. By operating directly in the representational space of LLMs, RepE allows both the extraction of latent directions corresponding to shortcut mechanisms (\textit{RepReading}) and their targeted manipulation (\textit{RepControl}). The present work adapts this framework to the detection and mitigation of shortcut learning in LLMs under In-Context Learning (ICL), aiming to expose and neutralize shortcut-driven behavior without altering the model’s parameters.
 
 \subsection{Shortcut detection}
 
@@ -155,10 +179,16 @@ As illustrated in Figure \ref{fig:myrepeframework}, the first step is preprocess
 \begin{enumerate}
     \item Begin with a dataset for an arbitrary NLP classification task containing textual statements and corresponding labels $(example^{(i)}, label^{(i)})$, where each example exists both in its normal form (referred to as the \textit{clean} example) and in a version where a specific shortcut cue has been injected (referred to as the \textit{dirty} example);
     
-    \item Select prompt templates $T_f^+$ and $T_f^-$ (see Section \ref{subsec:repreading}) to add an ICL context respectively to dirty and clean statements. In this work, a zero-shot setting is adopted using a prompt template of the form:\\
+    \item Select prompt templates $T_f^+$ and $T_f^-$ (see Section \ref{subsec:repreading}) to add an ICL context respectively to dirty and clean statements. In this work, a zero-shot setting is adopted using a prompt template of the form:
     
-    \begin{tcolorbox}[colback=gray!5,colframe=gray!50,boxrule=0.2pt,arc=2pt]
-    \texttt{<USER TAG> \textcolor{blue!50}{<instruction>} \textcolor{red!50}{<dirty/clean example>} }\\[2pt]
+    \begin{tcolorbox}[
+    colback=white,
+    colframe=accent!40,
+    boxrule=0.4pt,
+    arc=2pt
+    ]
+    \ttfamily
+    \texttt{<USER TAG> \textcolor{accent}{<instruction>} \textcolor{accent}{<dirty/clean example>} }\\[2pt]
     \texttt{<ASSISTANT TAG>}
     \end{tcolorbox}
 
@@ -166,7 +196,7 @@ As illustrated in Figure \ref{fig:myrepeframework}, the first step is preprocess
 
     \item After formatting the examples with the chosen prompt templates, clean and dirty instances derived from the same original statement are paired to form a dataset of contrastive examples $(P^{(i)}_{+shortcut}, P^{(i)}_{-shortcut})$. Optionally, this dataset can be filtered to include only selected pairs (for instance, those where the model's output label differs between the clean and dirty prompts, in order to retain data corresponding to shortcut cues that actually induce a behavioral shift);
     
-    \item The examples within each pair are then randomly shuffled to get pairs $(P_x^{(i)}, P_y^{(i)})$, where $x,\ y \in \{ +shortcut, -shortcut \}$, and labeled through a function:
+    \item The examples within each pair are then randomly shuffled to get new pairs $(P_x^{(i)}, P_y^{(i)})$, where $x,\ y \in \{ +shortcut, -shortcut \}$, and labeled through a function:
     \[
         Label(P_x^{(i)}) =
         \begin{cases}
@@ -190,9 +220,9 @@ Then, for each layer $l$, the difference between hidden states at even and odd p
     \label{fig:repreaders}
 \end{figure}
 
-These representations are then used as input to the specific \textit{RepReader} to be trained. In the RepE framework, a RepReader is a module responsible for extracting the latent direction associated with the concept or function of interest (in this case, the "shortcut reliance" function), and can employ either unsupervised or supervised methods. In particular, Principal Component Analysis (PCA) and ClusterMean are the main approaches adopted (Figure \ref{fig:repreaders}).\\
+These representations are then used as input to the specific \textit{RepReader} to be trained. In the RepE framework, a RepReader is a module responsible for extracting the latent direction associated with the concept or function of interest (in this case, the "shortcut reliance" function), and can employ either unsupervised or supervised methods. In particular, Principal Component Analysis (PCA) and ClusterMean are the main adopted approaches (Figure \ref{fig:repreaders}).\\
 
-The former is an unsupervised technique that requires only contrastive hidden states as input. It computes the difference between paired representations to obtain relative hidden states and then extracts the desired number of principal components from the resulting data for each layer. The first principal component (i.e. the direction explaining the greatest variance in the data) is hypothesized to correspond to the latent function being elicited. ClusterMean, on the other hand, is a supervised method that requires class labels (clean or dirty) of each hidden-state representation. It clusters the representations into two groups, computes the mean vector of each cluster to obtain class representatives, and then defones the latent directin as the difference between the positive (dirty) and negative (clean) groups.\\
+The former is an unsupervised technique that requires only contrastive hidden states as input. It computes the difference between paired representations to obtain relative hidden states and then extracts the desired number of principal components from the resulting data for each layer. The first principal component (i.e. the direction explaining the greatest variance in the data) is hypothesized to correspond to the latent function being elicited. ClusterMean, on the other hand, is a supervised method that requires class labels (clean or dirty) of each hidden-state representation. It clusters the representations into two groups, computes the mean vector of each cluster to obtain class representatives, and then defines the latent directin as the difference between the positive (dirty) and negative (clean) groups.\\
 
 Therefore, both methods produce a set of directions $\{ V_l \}_{l \in layers}$, where $ V_l $ is a vector of size \textit{(hidden dimension)} representing the latent concept or function to be extracted, referred to as the \textit{reading vector}. In addition, as already mentioned, both methods use the training labels to estimate a sign $S_l$ for each layer $l$, determining whether shortcut representations tend to lie on the high-value or low-value side of each direction. By leveraging these sets, a simple shortcut detector can be constructed: given an arbitrary input text, it is fed to the target LLM, the corresponding hidden-state representations are extracted, projected onto the directions $\{ V_l \}_{l \in layers}$ via matrix multiplication, and then multiplied by the corresponding signs $\{ S_l \}_{l \in layers}$. The resulting projection values provide an estimate of the degree of shortcut reliance exhibited by the model at each layer and token position.
 
@@ -215,7 +245,7 @@ As shown in Figure \ref{fig:myrepeframework}, given an ICL setting for a chosen 
     \item \textit{Projection}: \begin{equation}H_l' = \left( I - \frac{V_lV_l^T}{\|V_l\|^2}\right) H_l\end{equation} where $I$ is the identity matrix. In this case, the component of $H_l$ aligned with the shortcut direction $V_l$ is projected out, effectively removing the shortcut-related contribution from the representation.
 \end{itemize}
 
-After injecting these steered actovations in the target LLM, the model can be evaluated on the given ICL task to assess how the RepControl intervention influences its prediction behavior.  
+After injecting these steered activations in the target LLM, the model can be evaluated on the given ICL task to assess how the RepControl intervention influences its prediction behavior.  
 This evaluation involves analyzing the predicted label probabilities and comparing the accuracy of the baseline and controlled models on the same test sets.  
 For shortcut mitigation, the reading vectors extracted via PCA and ClusterMean from contrastive data containing or lacking shortcut cues are used to suppress shortcut reliance by applying a negative $\alpha$ coefficient in the linear combination and piecewise operation settings, or by removing the shortcut component altogether via the projection operator.
 
@@ -223,21 +253,19 @@ For shortcut mitigation, the reading vectors extracted via PCA and ClusterMean f
 
 The proposed framework for shortcut detection and mitigation through Representation Engineering (RepE) is based on several underlying assumptions regarding the internal representations of LLMs and their relation to observable behaviors.  
 First, it assumes that shortcut reliance corresponds to consistent and linearly separable activation patterns within the model’s hidden states, such that it is possible to identify a latent direction that represents this mechanism.  
-This assumption is supported by prior work showing that abstract properties such as honesty, bias, or sentiment can emerge as approximately linear features in LLM representation spaces \citep{zou2025representationengineeringtopdownapproach}.  
+This assumption is supported by prior work showing that abstract properties such as honesty, bias or sentiment can emerge as approximately linear features in LLM representation spaces \citep{zou2025representationengineeringtopdownapproach}.  
 Nevertheless, shortcut behavior may not always be strictly linear, and complex non-linear interactions between attention and feed-forward model components could make certain forms of shortcut reliance harder to isolate through purely linear methods like PCA or ClusterMean.\\
 
 A second and particularly critical assumption concerns the quality and construction of the data fed into the RepReading phase.  
 The method relies on contrastive pairs of inputs that should differ only in the presence or absence of a shortcut cue, while preserving identical semantic and syntactic content. Such carefully controlled data is essential for ensuring that the latent directions extracted truly reflect shortcut-related mechanisms rather than confounding linguistic or contextual factors: poorly designed pairs may yield weak or noisy representations of the intended shortcut direction. However, datasets of this kind are still scarce: existing NLP benchmarks rarely include explicit shortcut annotations or systematically paired “clean” and “dirty” examples. As a result, constructing suitable contrastive datasets often requires manual design or synthetic data generation, which introduces additional bias and limits large-scale applicability.\\
 
 Another key assumption is that manipulating hidden-state representations 
-with additive or projective operations (such as \textit{RepControl}) yields interpretable and causally meaningful changes in model behavior.  
-While previous experiments indicate that such interventions can produce predictable effects, there is no formal guarantee that these modifications act exclusively on the intended feature, as latent directions in high-dimensional spaces may encode multiple entangled concepts.  
-This limitation underscores the importance of complementary interpretability analyses to disentangle overlapping representational factors.\\
+with additive or projective operations (such as those employed by \textit{RepControl}) yields interpretable and causally meaningful changes in model behavior.  
+While prior empirical results suggest that such interventions can produce predictable and controllable effects, there is no formal guarantee that they act exclusively on the intended feature. In high-dimensional representation spaces, latent directions may encode multiple, partially entangled concepts, such that modifying a single direction can inadvertently affect other semantically relevant factors.
+This limitation highlights the need for complementary interpretability analyses to assess whether observed behavioral changes truly reflect the suppression of the targeted shortcut mechanism, rather than unintended side effects arising from representational overlap.\\
 
-In terms of design trade-offs, the proposed approach deliberately avoids parameter updates and additional training, prioritizing interpretability and computational efficiency.  
-The resulting method is lightweight and transferable across models and tasks, but may achieve lower precision than optimization-based mitigation strategies.  
-Its effectiveness also depends on the representational depth of the selected layers and the linear separability of the shortcut phenomenon under analysis.\\
-
-Overall, the main goal of this work is to provide an interpretable and training-free framework to analyze and mitigate shortcut reliance directly within the representational space of LLMs.
-
+In terms of design trade-offs, the proposed approach deliberately avoids parameter updates and additional training, prioritizing interpretability, modularity, and computational efficiency.
+As a result, the method is lightweight and readily transferable across models and tasks, but may achieve lower precision than optimization-based mitigation strategies that explicitly fine-tune model parameters.
+Its effectiveness further depends on the representational role of the selected intervention layers and on the extent to which the targeted shortcut mechanism is linearly separable in the model’s latent space.
+Overall, the primary objective of this work is not to eliminate shortcut learning entirely, but to provide an interpretable, training-free framework for analyzing and mitigating shortcut reliance directly within the representational space of LLMs.
 \end{document}
