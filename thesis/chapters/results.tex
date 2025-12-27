@@ -19,12 +19,12 @@ In order to evaluate the framework proposed in Section \ref{sec:method}, two mai
     \item to test the effectiveness of the \textit{shortcut mitigation} procedure based on RepControl interventions, determining whether steering the internal representations of LLMs can effectively reduce shortcut-driven behavior under ICL.
 \end{itemize} 
 
-Accordingly, this section describes the experimental configuration adopted for both stages, detailing the models, datasets, prompt design and implementation settings used in the analysis.\\
+Accordingly, this section describes the experimental configuration adopted for both stages, detailing the model, datasets, prompt design and implementation settings used in the analysis.\\
 
 \subsection{Model}
 
-All experiments were carried out using the \textit{Mistral 7B Instruct v0.1} model.\footnote{Available at \url{https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1}}  
-This choice was motivated by both methodological and practical considerations: Mistral 7B Instruct v0.1 is a decoder-only transformer with open weights, which allows direct access to the model’s internal hidden states, an essential requirement for applying the RepE-based framework. Moreover, despite its moderate size, it demonstrates strong instruction-following and reasoning capabilities, making it representative of modern LLMs while remaining computationally efficient. From a practical perspective, the experiments were conducted on free Google Colab environments, where hardware memory is limited. To enable inference and activation extraction within these constraints, the model was loaded in 4-bit precision using the \textit{bitsandbytes} quantization library. This approach significantly reduced GPU memory usage with minimal degradation in representational fidelity, allowing the experiments to be performed efficiently without altering the qualitative behavior of the model.\\
+All experiments were carried out using the \textit{Mistral 7B Instruct v0.1} model\footnote{Available at \url{https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1}}. 
+This choice was motivated by both methodological and practical considerations: Mistral 7B Instruct is a decoder-only transformer with open weights, which allows direct access to the model’s internal hidden states, an essential requirement for applying the RepE-based framework. Moreover, despite its moderate size, it demonstrates strong instruction-following and reasoning capabilities, making it representative of modern LLMs while remaining computationally efficient. From a practical perspective, the experiments were conducted on free Google Colab environments, where hardware memory is limited. To enable inference and activation extraction within these constraints, the model was loaded in 4-bit precision using the \textit{bitsandbytes} quantization library. This approach significantly reduced GPU memory usage with minimal degradation in representational fidelity, allowing the experiments to be performed efficiently without altering the qualitative behavior of the model.\\
 
 Mistral 7B Instruct v0.1 follows the transformer-decoder architecture introduced by \textit{Mistral AI}, featuring 32 transformer layers and approximately 7.3 billion parameters.  
 Each layer consists of a multi-head self-attention block followed by a feed-forward (MLP) block, both wrapped with \textit{RMSNorm} normalization instead of the standard LayerNorm, improving numerical stability in low-precision inference.  
@@ -32,14 +32,14 @@ The attention mechanism uses a \textit{Grouped Query Attention} (GQA) configurat
 Positional information is encoded using \textit{rotary positional embeddings} (RoPE), and the model employs \textit{SwiGLU} activation functions in the feed-forward layers.  
 The hidden dimension is 4096, with an intermediate feed-forward dimension of 14336 and a context window of up to 8192 tokens \citep{jiang2023mistral7b}.\\
 
-For the purpose of this work, hidden-state representations were extracted after each RMSNorm layer at the output of the transformer blocks.\footnote{Specifically, the hidden representations referred to as $\{H_l\}_{l \in layers}$ correspond to tensors of size $(batch\ size, sequence\ length, hidden\ dimension)$, where the first tensor represents the embedding layer output and each subsequent tensor represents the post-layer activations of the corresponding transformer block.
-}
+For the purpose of this work, hidden-state representations were extracted after each RMSNorm layer at the output of the transformer blocks\footnote{Specifically, the hidden representations referred to as $\{H_l\}_{l \in layers}$ correspond to tensors of size $(batch\ size, sequence\ length, hidden\ dimension)$, where the first tensor represents the embedding layer output and each subsequent tensor represents the post-layer activations of the corresponding transformer block.
+}.
 These activations correspond to the contextual embeddings used internally by the model to predict the next token and thus provide the representational substrate targeted by the RepE framework.  
 Accessing layerwise activations in this way enables the identification and manipulation of latent directions corresponding to shortcut-related mechanisms.\\
 
 Although the Mistral 7B architecture shares many similarities with LLaMA 2 models (such as the use of rotary positional embeddings and decoder-only transformer blocks), it introduces several design improvements that make it particularly suitable for this study.  
 First, Mistral's GQA enables faster computation and lower GPU memory footprint during layerwise extraction and manipulation of activations. Second, as already mentioned, the use of RMSNorm offers better numerical stability when operating under low-precision quantization settings such as the 4-bit configuration adopted here.  
-Finally, empirical evaluations have shown that Mistral 7B consistently outperforms LLaMA 2 models of comparable size on most standard benchmarks \citep{jiang2023mistral7b}, suggesting that its latent representations are richer and more semantically structured, an advantageous property for analyzing shortcut mechanisms within the representation space. Overall, Mistral 7B Instruct v0.1 provides an effective balance between accessibility, interpretability, and representational richness for the study of shortcut detection and mitigation.\\
+Finally, empirical evaluations have shown that Mistral 7B consistently outperforms LLaMA 2 models of comparable size on most standard benchmarks \citep{jiang2023mistral7b}, suggesting that its latent representations are richer and more semantically structured, an advantageous property for analyzing shortcut mechanisms within the representation space.\\
 
 \subsection{Datasets and prompt design}
 \label{subsec:datasets}
@@ -61,7 +61,7 @@ the correct label is \textit{entailment}.  Conversely, for:
 \end{quote}
 the correct label is \textit{contradiction}.\\
 
-The TER task can be seen as a general evaluation tool for testing the inference capabilities of NLP systems, which all share the need to process and understand natural language, and serves as a unifying framework for reformulating a variety of NLP tasks. For example, \textit{question answering} can be recast as TER by converting each candidate answer into a hypothesis formed from the question-answer pair and ranking them according to the degree of entailment with respect to the given premise. Similarly, in \textit{text summarization} and \textit{machine translation}, candidate summaries or translations can be treated as hypotheses whose quality is estimated by the extent to which they are entailed by the original text \citep{survey2022}.  
+The TER task can be seen as a general evaluation tool for testing the inference capabilities of NLP systems, which all share the need to process and understand natural language, and serves as a unifying framework for reformulating a variety of NLP tasks. For example, \textit{question answering} can be recast as TER by converting each candidate answer into an hypothesis formed from the question-answer pair and ranking them according to the degree of entailment with respect to the given premise. Similarly, in \textit{text summarization} and \textit{machine translation}, candidate summaries or translations can be treated as hypotheses whose quality is estimated by the extent to which they are entailed by the original text \citep{survey2022}.  
 Furthermore, TER is particularly well-suited for the present work since it is associated with several well-documented and easily observable shortcut phenomena (e.g. lexical overlap, negation cues, position bias), making it an ideal testbed for studying shortcut detection and mitigation via the proposed RepE-based framework.\\
 
 \noindent \textbf{Training Datasets.} The training datasets referred to as "NLP Shortcut Dataset" in Figure \ref{fig:myrepeframework} were thus taken from the \textit{ShortcutSuite} repository \citep{yuan2024llmsovercomeshortcutlearning}, which provides TER instances augmented with different types of injected shortcuts. In particular, the datasets selected for this work are those derived from the Multi-Genre Natural Language Inference (MNLI) corpus \citep{williams2018broadcoveragechallengecorpussentence}, a 433k-example collection for three-way textual entaiment, spanning ten text genres across both spoken and written English (e.g. telephone speech, government documents, fiction). ShortcutSuite uses a balanced subset of 3,000 premise-hypothesis pairs sampled from the MNLI development set to generate "shortcut-injected" alterations of the original text with the following shortcut types:
@@ -78,7 +78,7 @@ Furthermore, TER is particularly well-suited for the present work since it is as
     This corresponds to a form of \textit{Lexicon} shorcut (see Section \ref{sec:types_icl}).
     \vspace{1em}
 
-    \item \textbf{\textit{Position}}: Tautological sentences are inserted at different positions within the hypothesis to evaluate whether the model relies on positional cues rather than semantic content. For instance:
+    \item \textbf{\textit{Position}}: Tautological sentences are inserted at different positions within the premise to evaluate whether the model relies on positional cues rather than semantic content. For instance:
     \begin{quote}
         \small
         \textit{Premise (clean):} Also, the final rule is not intended to have any retroactive effect, and administrative procedures must be exhausted prior to any judicial challenge to the provisions of the rule.\\[4pt]
@@ -96,24 +96,36 @@ Furthermore, TER is particularly well-suited for the present work since it is as
     \end{quote}
 \end{itemize}
 
-These three shortcut types were chosen over the HANS-style shortcuts (\textit{Lexical Overlap}, \textit{Subsequence}, and \textit{Constituent}) included in ShortcutSuite because the RepE framework requires contrastive pairs where the clean and shortcut-injected examples correspond exactly to the same original instance.  
+These three shortcut types were chosen over the HANS-style shortcuts (\textit{Lexical Overlap}, \textit{Subsequence}, and \textit{Constituent}) included in the ShortcutSuite because the RepE framework requires contrastive pairs where the clean and shortcut-injected examples correspond exactly to the same original instance.  
 Negation, Position, and Style were the only shortcut sets that explicitly preserve this linkage through shared identifiers across the provided tables, enabling the construction of aligned clean-dirty pairs needed for RepReading.\\
 
 Before being fed to the RepReader, each example was formatted using a simple zero-shot ICL prompt template containing the instruction \texttt{"Decide if the hypothesis is entailed by the premise"}. Below is a complete instance of a contrastive pair of prompts used to extract a latent shorcut direction.\\
 
-\begin{tcolorbox}[colback=white,colframe=blue!40!black!30,boxrule=0.2pt,arc=2pt]
-    \texttt{USER: \textcolor{blue!50}{Decide if the hypothesis is entailed by the premise.}\\
-     \textcolor{blue!50}{Premise: Children will enjoy the little steam train that loops around the bay to Le Crotoy in the summer.}\\
-     \textcolor{blue!50}{Hypothesis: There is a steam train looping around the bay to Le Crotoy.}}\\
-    \texttt{ASSISTANT:} 
+\begin{tcolorbox}[
+  colback=white,
+  colframe=gray!40,
+  boxrule=0.4pt,
+  arc=2pt
+]
+    \texttt{USER: Decide if the hypothesis is entailed by the premise.\\
+     Premise: And yet, we still lack a set of global accounting and reporting standards that reflects the globalization of economies, enterprises, and markets.\\
+     Hypothesis: The globalization of economies is not reflected in global accounting standards.\\
+    ASSISTANT:} 
 \end{tcolorbox} 
 
-\begin{tcolorbox}[colback=white,colframe=blue!40!black!30,boxrule=0.2pt,arc=2pt]
-    \texttt{USER: \textcolor{blue!50}{Decide if the hypothesis is entailed by the premise.}\\
-     \textcolor{blue!50}{Premise: Children will enjoy the little steam train that loops around the bay to Le Crotoy in the summer.}\\
-     \textcolor{blue!50}{Hypothesis: There is a steam train looping around the bay to Le Crotoy} \textcolor{red!50}{and false is not true.}} \\
-    \texttt{ASSISTANT:} 
-\end{tcolorbox} 
+\vspace{0.5em}
+
+\begin{tcolorbox}[
+  colback=white,
+  colframe=gray!40,
+  boxrule=0.4pt,
+  arc=2pt
+]
+     \texttt{USER: Decide if the hypothesis is entailed by the premise.\\
+     Premise: And yet, we still lack a set of global accounting and reporting standards that reflects the globalization of economies, enterprises, and markets.\\
+     Hypothesis: The globalization of economies is not reflected in global accounting standards \textbf{and green is not red}.\\
+    ASSISTANT:}
+\end{tcolorbox}
 
 \vspace{1em}
 
@@ -121,7 +133,7 @@ Before being fed to the RepReader, each example was formatted using a simple zer
 Instead, the task instances themselves serve as stimuli: the model is not required to answer, but only to process the input prompts, thereby generating hidden-state activations that ideally differ between clean and shortcut-augmented versions of the same example.\\
 
 
-\noindent \textbf{Evaluation Datasets.} The datasets employed for evaluating the proposed methodology (referred to as "NLP Dataset" in Figure \ref{fig:myrepeframework}) are standard NLP benchmarks for the TER task. In particular, in addition to the already cited MNLI, the Recognizing Textual Entailment (RTE) dataset \citep{dagan2006rte} from the GLUE benchmark is used. RTE consists of sentence pairs for entailment vs. not-entailment classification, drawn from the annual RTE challenges held between 2005 and 2011, and built primarily from news and Wikipedia text. While MNLI serves as an \textit{in-distribution} testbed for shortcut detection and mitigation, given that the shortcut training datasets are derived from it, RTE provides an opportunity to test whether the proposed approach generalizes to \textit{naturally occurring} shortcuts in a standard entailment benchmark.\\
+\noindent \textbf{Evaluation Datasets.} The datasets employed for evaluating the proposed methodology (referred to as "NLP Dataset" in Figure \ref{fig:myrepeframework}) are standard NLP benchmarks for tasks such as TER. In particular, in addition to the already cited MNLI, the Recognizing Textual Entailment (RTE) dataset \citep{dagan2006rte} from the GLUE benchmark is used. RTE consists of sentence pairs for entailment vs. not-entailment classification, drawn from the annual RTE challenges held between 2005 and 2011, and built primarily from news and Wikipedia text. While MNLI serves as an in-distribution testbed for shortcut detection and mitigation, given that the shortcut training datasets are derived from it, RTE provides an opportunity to test whether the proposed approach generalizes to naturally occurring shortcuts in a standard entailment benchmark.\\
 
 For the practical evaluation, the UniBias framework \citep{zhou2024unibiasunveilingmitigatingllm} was used to construct ICL prompts for each test instance.  
 In a $k$-shot setting, the ICL context is built as follows:
@@ -131,7 +143,7 @@ In a $k$-shot setting, the ICL context is built as follows:
     \item when $k > 0$, the prompt contains $k$ demonstration examples for each label class, randomly sampled from the dataset training split, followed by the test instance. No explicit task instruction is included in this setting.
 \end{itemize}
 
-For illustration, in a 1-shot setting, an actual RTE prompt seen by the model at test time may be:
+\noindent For illustration, in a 1-shot setting, an actual RTE prompt seen by the model at test time may be:
 
 \begin{quote}
 \small
@@ -164,7 +176,7 @@ Specifically, the following datasets were employed:
     \item \textbf{MMLU} \citep{hendrycks2021measuringmassivemultitasklanguage}: the Massive Multitask Language Understanding benchmark, a large-scale multiple-choice collection spanning diverse subjects such as mathematics, history, law and computer science.
 \end{itemize}
 
-Evaluating the framework on tasks beyond entailment is also valuable for assessing whether shortcut-related representations learned by LLMs exhibit any degree of cross-task consistency.  
+\noindent Evaluating the framework on tasks beyond entailment is also valuable for assessing whether shortcut-related representations learned by LLMs exhibit any degree of cross-task consistency.  
 If similar shortcut directions emerge across heterogeneous datasets, ranging from sentiment analysis to causal reasoning or word-sense disambiguation, this would suggest the presence of shared latent mechanisms through which LLMs internalize and exploit superficial cues.  
 Conversely, a lack of transferability would indicate that shortcut reliance is highly task-specific, reinforcing the need for targeted analyses.  
 Thus, examining multiple NLP tasks provides insights into whether shortcut representations capture generalizable patterns or remain confined to the TER setting from which they were extracted.\\
@@ -211,13 +223,13 @@ To qualitatively assess the effectiveness of the RepE-based framework for shortc
 \begin{itemize}
     \item \textbf{Encoding of the input statements.} The sentences $s1$ and $s2$ are fed to the frozen target LLM to obtain hidden representations $h_{l}$ for each layer $l$ and token position $t$. Optionally, the model's generated continuations for $s1$ and $s2$ are appended to the input before extracting the hidden representations, allowing shortcut effects to surface in both the prompt and the generation.
     
-    \item \textbf{Projection onto the shortcut direction.} For each layer $l$ and token position $t$, the hidden representations $h_{l, t}$ is projected onto the shortcut direction $V_l$ inferred by the RepReader $R$ for that layer. The projection is then multiplied by the corresponding sign $S_l$: \[
+    \item \textbf{Projection onto the shortcut direction.} For each layer $l$ and token position $t$, the hidden representations $h_{l, t}$ are projected onto the shortcut direction $V_l$ inferred by the RepReader $R$ for that layer. The projection is then multiplied by the corresponding sign $S_l$: \[
     A_{l,t} = \langle h_{l,t}, V_l \rangle \cdot S_l
     \]
 
-    \item \textbf{Averaged projections.} Given a selected set of hidden layers $L$, the scores $A_{l,t}$ are averaged across all laters in $L$ to obtain a mean shortcut-alignmet score for each token position 
+    \item \textbf{Averaged projections.} Given a selected set $L$ of hidden layers, the scores $A_{l,t}$ are averaged across all layers in $L$ to obtain a mean shortcut-alignmet score for each token position 
     \[
-    A^{\text{mean}}_{t} = \frac{1}{|H|} \sum_{l \in H} A_{l,t}
+    A^{\text{mean}}_{t} = \frac{1}{|L|} \sum_{l \in L} A_{l,t}
     \]
     This aggregation highlights persistent shortcut activation patterns across layers rather than isolated spikes.
 \end{itemize}
@@ -257,14 +269,14 @@ each augmented with the continuation generated by the model.
 \end{figure}
 
 \noindent In the deepest hidden layers (approximately layers 
--10 to -1), both scans display a strong correlation with the shortcut direction (dark red cells). This suggests that these late layers are intrinsically more sensitive to the shortcut feature, independently of the specific input. Nevertheless, some meaningful differences between the two scans can be observed. For token positions 40-45, the clean scan exhibits a negative correlation with the shortcut direction, whereas the dirty scan shows an extended red band, indicating shortcut activation even in earlier layers. Furthermore, at the final token position (which is expected to summarize the representation of the entire input sequence) the clean scan shows shortcut correlation only in the last layer, while the dirty scan displays it across multiple layers.\\
+-10 to -1), both scans display a strong correlation with the shortcut direction (dark red cells). This suggests that these late layers are intrinsically more sensitive to the shortcut feature, independently of the specific input. At token positions 40-45, the clean scan exhibits a negative correlation with the shortcut direction, whereas the dirty scan shows an extended red band, indicating shortcut activation even in earlier layers. Furthermore, at the final token position (which is expected to summarize the representation of the entire input sequence) the clean scan shows shortcut correlation only in the last layer, while the dirty scan displays it across multiple layers.\\
 
 To gain further insight into the semantic direction captured by the RepReader, the averaged scores $A^{\text{mean}}_{t}$ can be plotted over the corresponding tokens to identify which words correlate most strongly with the learned shortcut direction. Figure \ref{fig:detection} presents the detection results for the $s2$ statement together with its generated continuation, truncated after a fixed number of tokens. Darker green shading indicates stronger alignment with the shortcut direction. Most highlighted tokens appear as isolated occurrences and correspond to common high-frequency words (such as "that", "have", "and") which are likely attributable to noise. Nevertheless, portions of the shortcut cue "and green is not red" also exhibit clear activation, suggesting that the RepReader partially identifies and responds to the shortcut structure present in the input.\\
 
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{assets/detection_management_dirty.png}
-    \caption{Visualization of token-level projection scores onto the shortcut direction, averaged across selected hidden layers}
+    \caption{Visualization of token-level projection scores onto the shortcut direction, averaged across all hidden layers}
     \label{fig:detection}
 \end{figure}
 
@@ -273,7 +285,7 @@ The outcomes of the shortcut detection experiments offer insight into the effect
 \subsection{Shortcut Mitigation Results}
 \label{sec:mitres}
 
-To evaluate the effectiveness of the proposed RepE-based framework described in Section \ref{sec:method} for mitigating shortcut learning, the Mistral 7B Instruct v0.1 model was evaluated on ICL-based classification tasks both in its base version and under RepControl interventions. Model performance was assessed using standard classification metrics, including accuracy and F1-score.\\
+To evaluate the effectiveness of the RepE-based framework described in Section \ref{sec:method} for mitigating shortcut learning, the Mistral 7B Instruct v0.1 model was evaluated on ICL-based classification tasks both in its base version and under RepControl interventions. Model performance was assessed using standard classification metrics, including accuracy and F1-score.\\
 
 \noindent \textbf{Hyperparameter Search.} A grid search over multiple hyperparameter configurations was conducted to identify effective intervention settings and to analyze the sensitivity of the mitigation performance to different control parameters. Table \ref{tab:hyperparams} summarizes the hyperparameters and the corresponding values explored in the experiments.
 
@@ -308,14 +320,14 @@ Training prompt selection & Criterion used to select prompts from the ShortcutSu
 \label{tab:hyperparams}
 \end{table}
 
-The hyperparameter search was conducted on the RTE test set using a Weights\&Bias sweep. Several observations can be drawn from the results. First, as shown in Figure \ref{fig:coeffplot}, stronger interventions ($\alpha = -1.7$ or $\alpha = -1.5$) are associated with lower average accuracy scores, whereas the best results, both in terms of average and peak accuracy, are achieved with a moderate intervention strength ($\alpha = -0.5$).  
+\noindent The hyperparameter search was conducted on the RTE test set using a Weights\&Bias sweep. Several observations can be drawn from the results. First, as shown in Figure \ref{fig:coeffplot}, stronger interventions ($\alpha = -1.7$ or $\alpha = -1.5$) are associated with lower average accuracy scores, whereas the best results, both in terms of average and peak accuracy, are achieved with a moderate intervention strength ($\alpha = -0.5$).  
 This suggests that excessively strong suppression of the shortcut direction may also remove task-relevant information that is entangled with the shortcut representation, thereby harming overall performance.  
 In contrast, milder interventions appear to strike a better balance by attenuating shortcut reliance while preserving sufficient semantic signal to support correct inference. Regarding the size of the training dataset, no clear monotonic relationship emerges between the number of prompt pairs and model performance. Nevertheless, smaller dataset sizes (64 or 128 prompt pairs) tend to achieve the highest accuracy more frequently across runs. This suggests that even a limited number of randomly sampled contrastive examples may be sufficient to expose dominant shortcut-related signals in the model’s representations, potentially reducing the influence of noise that could otherwise degrade performance.\\
 
 \begin{figure}
     \centering
     \includegraphics[width=1\linewidth]{assets/NewCoeffAcc.png}
-    \caption{Scatter plot of the hyperparameter search runs, generated via Weights \& Bias, with respect to the $\alpha$ coefficient values and the training datasets sizes. The blue curve represents the running avverage of the achieved accuracy scores across runs.}
+    \caption{Scatter plot of the hyperparameter search runs, generated via Weights \& Bias, showing the achieved accuracy, the $\alpha$ coefficient value and the training dataset size for each run. The blue curve represents the running avverage of the accuracy scores.}
     \label{fig:coeffplot}
 \end{figure}
 
@@ -329,7 +341,7 @@ In contrast, milder interventions appear to strike a better balance by attenuati
 The type of shortcut cue present in the training prompts also has a noticeable impact on model performance under intervention, as shown in Figure \ref{fig:shortcut_types}.  
 In particular, the \textit{Negation} and \textit{Position} shortcut types yield comparable results, with average accuracy scores across runs of $62\%$ and $61\%$, respectively.  
 In contrast, the \textit{Style} shortcut leads to a marked drop in performance, with an average accuracy of $58\%$ and worst-case runs reaching as low as $41\%$. This suggests that stylistic transformations may induce more diffuse or less linearly separable shortcut representations, making them harder to isolate and suppress through linear RepControl interventions. Unlike lexical or positional cues, stylistic changes tend to affect broader aspects of the input distribution, potentially entangling shortcut-related signals with task-relevant semantic features and increasing representational overlap.
-Additionally, restricting the training set to prompt pairs for which the presence of a shortcut cue caused the model to misclassify the example did not result in improved post-intervention performance, while substantially increasing the computational cost of data selection.  
+Restricting the training set to prompt pairs for which the presence of a shortcut cue caused the model to misclassify the example did not result in improved post-intervention performance, while significantly increasing the computational cost of data selection.  
 Consequently, random sampling of training prompts was adopted in all subsequent experiments as a more efficient and equally effective strategy.\\
 
 \begin{figure}
@@ -339,7 +351,7 @@ Consequently, random sampling of training prompts was adopted in all subsequent 
     \label{fig:dirop}
 \end{figure}
 
-As shown in Figure \ref{fig:dirop}, the performance achieved by different direction extraction methods (RepReader types) and RepControl operators is generally comparable across configurations. Nevertheless, some consistent trends emerge from the results: PCA-based RepReaders outperform ClusterMean across all operators, and the projection operator achieves the highest overall performance among the tested control strategies. A possible explanation for these observations can be found in the nature of both the representation extraction methods and the control operators. The PCA-based RepReader aim to identify the direction that explain the largest variance across contrastive hidden representations, which, in the shortcut detection setting, may correspond to dominant and consistently activated shortcut-related signals. By aggregating information across many examples without relying on explicit class centroids, PCA is more robust to noise and idiosyncratic variations introduced by individual prompt pairs. In contrast, the ClusterMean approach relies on averaging representations within the clean and shortcut-induced groups, which may be more sensitive to outliers or to residual semantic differences unrelated to the shortcut itself, resulting in less stable directions.\\
+As shown in Figure \ref{fig:dirop}, the performance achieved by different direction extraction methods (RepReader types) and RepControl operators is generally comparable across configurations. However, some consistent trends emerge from the results: PCA-based RepReaders outperform ClusterMean across all operators, and the projection operator achieves the highest overall performance among the tested control strategies. A possible explanation for these observations can be found in the nature of both the representation extraction methods and the control operators. The PCA-based RepReader aim to identify the direction that explain the largest variance across contrastive hidden representations, which, in the shortcut detection setting, may correspond to dominant and consistently activated shortcut-related signals. By aggregating information across many examples without relying on explicit class centroids, PCA is more robust to noise and idiosyncratic variations introduced by individual prompt pairs. In contrast, the ClusterMean approach relies on averaging representations within the clean and shortcut-induced groups, which may be more sensitive to outliers or to residual semantic differences unrelated to the shortcut itself, resulting in less stable directions.\\
 
 Regarding the control operators, the superior performance of the projection approach can be interpreted as a consequence of its conservative nature.  Rather than adding or subtracting a fixed perturbation to the hidden states, projection explicitly removes the component of the representation aligned with the shortcut direction, leaving the remaining subspace unchanged. This minimizes the risk of distorting task-relevant semantic information that may be partially entangled with shortcut features, a risk that is more pronounced for additive operators such as linear combination or piecewise modulation, especially at higher intervention strengths.\\
 
@@ -357,7 +369,7 @@ Under feature superposition, any linear intervention inevitably affects entangle
 Lastly, as shown in Figure \ref{fig:layers}, the range of transformer layers at which RepControl is applied has a substantial impact on post-intervention performance.  
 Although all tested layer ranges exhibit considerable variability in accuracy across runs, the range spanning layers from $-5$ to $-17$ consistently yields the most reliable results, as indicated by a higher concentration of accuracy scores around $74\%$.  
 The range from $-8$ to $-22$ reaches a peak accuracy comparable to that of the $-5$ to $-17$ range; however, it displays significantly higher variance, including the lowest-performing runs observed across all configurations.  
-Finally, the widest range, from $-10$ to $-29$, produces the lowest average accuracy overall, suggesting that interventions applied too deeply across the model may increasingly disrupt task-relevant representations.\\
+Finally, the widest range, from $-10$ to $-29$, produces the lowest average accuracy overall, suggesting that interventions applied too early across the model may increasingly disrupt task-relevant representations.\\
 
 More generally, a plausible interpretation of these results is that the effectiveness of RepControl is strongly tied to the representational role played by different transformer layers.  
 Prior work has shown that in LLMs higher layers tend to encode increasingly abstract, task-specific and decision-relevant information, while lower layers focus more on lexical, syntactic, and surface-level features \citep{rogers-etal-2020-primer}.  
