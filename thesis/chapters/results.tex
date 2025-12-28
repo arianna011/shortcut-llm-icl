@@ -461,7 +461,7 @@ This experiment therefore serves as a preliminary test of whether shortcut mitig
 However, the resulting performance on the RTE benchmark was consistently lower than both the baseline model and the best single-shortcut interventions.
 Specifically, the baseline Mistral-7B-Instruct model achieves an accuracy of $0.787$ on RTE, while the best RepControl configurations based on a single shortcut direction reach accuracies above $0.83$. In contrast, the aggregated-shortcut interventions yield accuracies in the range of approximately $0.72$-$0.80$, with an average accuracy of $0.746$, failing to match the baseline and substantially underperforming compared to single-shortcut control. This degradation suggests that naively combining shortcut directions through a normalized sum does not lead to additive benefits.\\ 
 
-A plausible explanation is that different shortcut types are not perfectly aligned in representation space. Although they may share high-level inductive biases toward shallow heuristics, their corresponding latent directions can partially conflict or overlap with task-relevant features in distinct ways. Aggregating them into a single control vector may therefore attenuate useful components or suppress information that is necessary for correct entailment judgments, leading to degraded performance rather than improved robustness. Overall, these findings highlight an important limitation of linear representation-level control: while effective at targeting dominant shortcut mechanisms individually, it does not trivially scale to the joint mitigation of heterogeneous shortcuts. They suggest that more structured or adaptive strategies, such as shortcut-specific control directions, weighted or learned aggregation schemes, or non-linear intervention mechanisms, may be required to robustly suppress multiple shortcuts behaviors without compromising task performance.
+A possible explanation is that different shortcut types are not perfectly aligned in representation space. Although they may share high-level inductive biases toward shallow heuristics, their corresponding latent directions can partially conflict or overlap with task-relevant features in distinct ways. Aggregating them into a single control vector may therefore attenuate useful components or suppress information that is necessary for correct entailment judgments, leading to degraded performance rather than improved robustness. These findings thus highlight an important limitation of linear representation-level control: while effective at targeting dominant shortcut mechanisms individually, it does not trivially scale to the joint mitigation of heterogeneous shortcuts. They suggest that more structured or adaptive strategies, such as shortcut-specific control directions, weighted or learned aggregation schemes, or non-linear intervention mechanisms, may be required to robustly suppress multiple shortcuts behaviors without compromising task performance.
 
 
 \subsection{Qualitative Analysis}
@@ -593,7 +593,7 @@ Such partial effects may indicate that, in this instance, shortcut-related featu
         \label{fig:conf_alpha_pos}
     \end{subfigure}
 
-    \caption{Multi-run confusion matrices of the hyperparameter search evaluation runs on the RTE dataset illustrating the effect of RepControl intervention strength on model predictions.}
+    \caption{Multi-run confusion matrices of the hyperparameter search evaluation runs on the RTE dataset illustrating the effect of RepControl intervention strength ($\alpha$) on model predictions.}
     \label{fig:confusion_alpha}
 \end{figure}
 
@@ -613,18 +613,18 @@ Integrated Gradients is a gradient-based interpretability technique that assigns
 
 Formally, given a model $F(\cdot)$, an input embedding $x \in \mathbb{R}^{T \times d}$ (with $T$ tokens and embedding dimension $d$) and a baseline embedding $x'$, the Integrated Gradients attribution for the $i$-th input dimension is defined as:
 \begin{equation}
-\mathrm{IG}_i(x) = (x_i - x'_i) \cdot \int_{\alpha=0}^{1} 
-\frac{\partial F\!\left(x' + \alpha (x - x')\right)}{\partial x_i} \, d\alpha
+\mathrm{IG}_i(x) = (x_i - x'_i) \cdot \int_{\beta=0}^{1} 
+\frac{\partial F\!\left(x' + \beta (x - x')\right)}{\partial x_i} \, d\beta
 \end{equation}
 
-In practice, the integral is approximated via a Riemann sum over $m$ discrete interpolation steps:
+\noindent In practice, the integral is approximated via a Riemann sum over $m$ discrete interpolation steps:
 \begin{equation}
 \mathrm{IG}_i(x) \approx (x_i - x'_i) \cdot \frac{1}{m} 
 \sum_{k=1}^{m} 
 \frac{\partial F\!\left(x' + \frac{k}{m} (x - x')\right)}{\partial x_i}
 \end{equation}
 
-In this work, the baseline $x'$ is chosen as the embedding of the beginning-of-sequence token, which provides a stable and semantically neutral reference compared to an all-zero embedding.
+\noindent In this work, the baseline $x'$ is chosen as the embedding of the beginning-of-sequence token, which provides a stable and semantically neutral reference compared to an all-zero embedding.
 At each interpolation step, gradients are computed with respect to the embedding vectors, and the resulting attributions are summed across the embedding dimension to obtain a scalar importance score for each token:
 \begin{equation}
 \mathrm{IG}_{\text{token}}(t) = \sum_{j=1}^{d} \mathrm{IG}_{t,j}
@@ -662,7 +662,7 @@ This indicates that the model relies heavily on the presence of shortcut-related
 In particular, the attribution associated with \textit{``red''} and with the negation-related token \textit{``no''} decreases markedly, while the relative contribution of semantically meaningful tokens such as \textit{``vegetables''} and \textit{``products''} slightly increases, even though their overall attribution values remain negative. This redistribution suggests that suppressing the shortcut-aligned latent direction encourages the model to rely less on superficial lexical cues and more on content-bearing elements of the input when forming its decision. At the same time, the attribution maps reveal non-negligible noise introduced by the intervention. Some punctuation symbols (e.g. \textit{``:''}, \textit{``.''}) receive increased attribution despite carrying no semantic relevance for the entailment relation, and the negative contribution associated with the token \textit{``green''} is further amplified rather than fully suppressed.\\
 
 While these results provide evidence that RepControl can reduce the influence of dominant shortcut cues, they also highlight several limitations of the proposed approach. First, the redistribution of attribution mass is not perfectly aligned with semantic relevance: some tokens that are logically irrelevant to the entailment relation, such as punctuation symbols, receive increased importance after intervention, indicating that RepControl may introduce secondary artifacts in the attribution patterns. Moreover, the fact that certain shortcut-related tokens retain or even increase their influence suggests that shortcut reliance is not fully captured by a single linear direction.  
-Instead, shortcut mechanisms are likely distributed across multiple entangled features in the representation space, making them only partially suppressible through linear interventions. As a result, RepControl appears to attenuate the dominant shortcut signal without completely disentangling it from task-relevant semantic representations. More generally, these observations underline a key limitation of representation-level control methods based on linear directions: while effective at modulating coarse-grained behavioral tendencies, they provide only an approximate handle on the complex and highly superposed internal representations of LLMs.\\
+Instead, shortcut mechanisms are likely distributed across multiple entangled features in the representation space, making them only partially suppressible through linear interventions. As a result, RepControl appears to attenuate the dominant shortcut signal without completely disentangling it from task-relevant semantic representations. More generally, these observations underline that, while representation-level control based on linear directions is effective at modulating coarse-grained behavioral tendencies, it provides only an approximate handle on the complex and highly superposed internal representations of LLMs.\\
 
 \noindent \textbf{Non-Linearity Analysis.} To better understand the observed limitations of the proposed linear shortcut mitigation framework, we analyze the \emph{intrinsic dimensionality} (ID) of the model’s hidden representations across different transformer layers.
 Intrinsic dimensionality refers to the minimum number of degrees of freedom required to describe the data locally, that is, the dimension of the underlying manifold on which the representations lie, independently of the ambient embedding space dimension. If shortcut-related representations are organized along highly curved or non-linear manifolds, linear methods such as PCA may provide only an approximate characterization, potentially limiting the effectiveness of extracting a single shortcut direction.\\
