@@ -565,7 +565,7 @@ Based on the information provided in the premise, it is not clear whether the hy
 Nevertheless, a qualitative difference can be observed in the controlled generation: compared to the baseline output, the model appears less decisive, producing a more tentative response rather than a confident categorical judgment. This behavior suggests that, although the shortcut-aligned direction was not sufficiently suppressed to fully reverse the decision, the intervention still affects the model’s internal confidence.  
 Such partial effects may indicate that, in this instance, shortcut-related features are more strongly entangled with task-relevant semantic information, or that additional shortcut dimensions beyond the single extracted direction contribute to the model’s decision process.\\
 
-\begin{figure}[ht]
+\begin{figure}[p]
     \centering
 
     \begin{subfigure}[t]{0.65\linewidth}
@@ -633,7 +633,7 @@ At each interpolation step, gradients are computed with respect to the embedding
 Specifically, attributions are calculated for the logit corresponding to a chosen class (e.g. \textit{entailment}), allowing the analysis to focus on which tokens contribute to supporting that decision. 
 This choice is particularly relevant in the context of shortcut learning, where spurious cues are expected to disproportionately influence the confidence of specific labels.  By keeping the target label fixed before and after RepControl intervention, changes in token attributions can be directly interpreted as shifts in the internal evidence used by the model. This enables a fine-grained assessment of whether shortcut mitigation suppresses shortcut-aligned token importance while preserving semantically meaningful contributions.\\
 
-\begin{figure}[ht]
+\begin{figure}[p]
     \centering
 
     \begin{subfigure}[t]{1\linewidth}
