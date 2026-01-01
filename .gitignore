@@ -12,7 +12,6 @@ results_tmp*/
 *.lof
 *.lot
 *.lol
-*.pdf
 # VS Code
 .vscode/
 # Python artifacts
