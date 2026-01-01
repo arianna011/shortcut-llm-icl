@@ -2,14 +2,13 @@ import pandas as pd
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import os
 import glob
-#from pandasgui import show
 from enum import Enum
 from collections.abc import Callable
 import torch
 from datasets import load_dataset
 import random
 try:
-    from rainbow_teaming import BaseLLM, EchoLLM
+    from extract_activations.abstractions import BaseLLM, EchoLLM
 except Exception:
     from extract_activations import BaseLLM, EchoLLM
 import re
@@ -334,15 +333,3 @@ def select_shortcut_prompts(paired_dataset: pd.DataFrame, task: Task, n_samples:
 
     else:
         raise NotImplementedError
-
-#if __name__ == '__main__':
-    # df = load_nli_shortcuts_from_folder("data/ShortcutSuite/")
-    # print(df.head())
-    # show(df)
-    # df_standard = load_nli_shortcuts_from_tsv("data/ShortcutSuite/dev_matched.tsv")
-    # df_shortcut = load_nli_shortcuts_from_tsv("data/ShortcutSuite/constituent.tsv")
-    # df = create_paired_dataset(df_standard, df_shortcut)
-    # print(df.columns)
-    # print(df.shape)
-    #selected_df = select_shortcut_prompts(df, Task.NLI, size=10, model=EchoLLM(), num_shot=1)
-    #show(df)
