@@ -1,0 +1,83 @@
+\section{Shortcut Learning in Large Language Models}
+
+\begin{frame}[fragile]{What is Shortcut Learning?}
+\begin{columns}
+\begin{column}{0.4\textwidth}
+ML models often learn \textbf{non-robust decision rules} (\textcolor{maincolor}{"shortcuts"})\\
+\emph{e.g. background $\rightarrow$ object class}\\
+\vspace{2em}
+\highlight{$\leftarrow$ Plausible Causes}
+\begin{itemize}
+      \item simplicity bias
+      \item dataset bias
+\end{itemize}
+\end{column}
+\begin{column}{0.5\textwidth}
+\includegraphics[width=\textwidth]
+{assets/[cow]}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{What is Shortcut Learning?}
+\begin{columns}
+\begin{column}{0.55\textwidth}
+\highlight{$\rightarrow$ Consequences}
+\begin{itemize}
+      \item[\cmark] Good performance on \textbf{training} examples and ID datasets
+      \item[\xmark] Poor generalization on \textbf{OOD data}
+      \item[\xmark] Undermined model \textbf{interpretability}
+\end{itemize}
+\end{column}
+\begin{column}{0.32\textwidth}
+\includegraphics[width=\textwidth]
+{assets/causation}
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}[fragile]{In-Context Learning (ICL)}
+    \vspace{0.5em}
+    \begin{center}
+    \includegraphics[height=0.95\textheight]{assets/bigger_ICL.png} 
+    \end{center} 
+\end{frame}
+
+
+\begin{frame}[fragile]{Shortcuts for LLMs under ICL}
+\begin{columns}
+\begin{column}{0.4\textwidth}
+\highlight{Example: Textual Entailment Recognition (TER)}\\
+\vspace{1em}
+\emph{Premise}: Sarah has won the lottery.\\
+\vspace{0.3em}
+\emph{Hypothesis}: You will \textcolor{maincolor}{\textbf{not}} believe it! Sarah just won the lottery.\\
+\vspace{0.3em}
+\emph{Answer}: \textcolor{maincolor}{\textbf{Contradiction}}
+\end{column}
+\begin{column}{0.5\textwidth}
+\includegraphics[width=\textwidth]
+{assets/shortcut_types_small}
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}[fragile]{Shortcuts for LLMs under ICL}
+\begin{columns}
+\begin{column}{0.4\textwidth}
+\highlight{Example: Textual Entailment Recognition (TER)}\\
+\vspace{1em}
+\emph{Premise}: Sarah has \textcolor{maincolor}{\textbf{won the lottery.}}\\
+\vspace{0.3em}
+\emph{Hypothesis}: You will not believe it! Sarah just \textcolor{maincolor}{\textbf{won the lottery.}}\\
+\vspace{0.3em}
+\emph{Answer}: \textcolor{maincolor}{\textbf{Entailment}}
+\end{column}
+\begin{column}{0.5\textwidth}
+\includegraphics[width=\textwidth]
+{assets/shortcut_types_small}
+\end{column}
+\end{columns}
+\end{frame}
