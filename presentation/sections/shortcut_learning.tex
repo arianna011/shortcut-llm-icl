@@ -8,8 +8,8 @@ ML models often learn \textbf{non-robust decision rules} (\textcolor{maincolor}{
 \vspace{2em}
 \highlight{$\leftarrow$ Plausible Causes}
 \begin{itemize}
-      \item simplicity bias
-      \item dataset bias
+      \item[\textcolor{sintefdarkgreen}{\textbullet}] simplicity bias
+      \item[\textcolor{sintefdarkgreen}{\textbullet}] dataset bias
 \end{itemize}
 \end{column}
 \begin{column}{0.5\textwidth}
@@ -24,20 +24,20 @@ ML models often learn \textbf{non-robust decision rules} (\textcolor{maincolor}{
 \begin{column}{0.55\textwidth}
 \highlight{$\rightarrow$ Consequences}
 \begin{itemize}
-      \item[\cmark] Good performance on \textbf{training} examples and ID datasets
+      \item[\textcolor{sintefdarkgreen}{\cmark}] Good performance on \textbf{training} examples and ID datasets
       \item[\xmark] Poor generalization on \textbf{OOD data}
       \item[\xmark] Undermined model \textbf{interpretability}
 \end{itemize}
 \end{column}
-\begin{column}{0.32\textwidth}
-\includegraphics[width=\textwidth]
+\begin{column}{0.4\textwidth}
+\includegraphics[width=0.9\textwidth]
 {assets/causation}
 \end{column}
 \end{columns}
 \end{frame}
 
 
-\begin{frame}[fragile]{In-Context Learning (ICL)}
+\begin{frame}[fragile]{LLMs and In-Context Learning (ICL)}
     \vspace{0.5em}
     \begin{center}
     \includegraphics[height=0.95\textheight]{assets/bigger_ICL.png} 
@@ -80,4 +80,11 @@ ML models often learn \textbf{non-robust decision rules} (\textcolor{maincolor}{
 {assets/shortcut_types_small}
 \end{column}
 \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Shortcut Detection and Mitigation}
+    \vspace{0.5em}
+    \begin{center}
+    \includegraphics[height=\textheight]{assets/big_mitigation_types.png} 
+    \end{center} 
 \end{frame}
