@@ -1,5 +1,58 @@
-\section{Representation Engineering for Shortcut Mitigation}
+\section{Representation Engineering for Shortcut Learning}
 
-\begin{frame}{placeholder}
+\begin{frame}{Representation Engineering (RepE)}
+\begin{columns}
+\begin{column}{0.4\textwidth}
+What if we could \textbf{understand} and \textbf{manipulate} LLMs through their \highlight{\textbf{hidden representations}}?\\
+\vspace{2em}
+\emph{Zou et al, "Representation Engineering: A Top-Down Approach to AI Transparency", 2025}
+\end{column}
+\begin{column}{0.5\textwidth}
+\includegraphics[width=\textwidth]
+{assets/zou_fairness}
+\end{column}
+\end{columns}
+\end{frame}
 
+\begin{frame}{Representation Engineering (RepE)}
+\begin{columns}
+\begin{column}{0.4\textwidth}
+What if we could \textbf{understand} and \textbf{manipulate} LLMs through their \highlight{\textbf{hidden representations}}?\\
+\vspace{2em}
+\emph{Zou et al, "Representation Engineering: A Top-Down Approach to AI Transparency", 2025}
+\end{column}
+\begin{column}{0.5\textwidth}
+\includegraphics[width=0.9\textwidth]
+{assets/zou_power}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Representation Engineering (RepE)}
+\begin{center}
+    Azaria and Mitchell, "The Internal State of an LLM Knows When It's Lying", 2023
+\end{center}
+\vspace{2em}
+\begin{quote}
+\centering
+Then, \textbf{if} an LLM \highlight{knows} when it's taking a shortcut, \\
+we can use Representation Engineering to detect it and suppress it.
+\end{quote}
+\end{frame}
+
+\begin{frame}{RepE-based framework for Shortcut Mitigation}
+\begin{columns}
+\begin{column}{0.2\textwidth}
+\begin{itemize}
+    \item Data Pre-processing
+    \item RepReading
+    \item RepControl
+\end{itemize}
+\end{column}
+\begin{column}{0.8\textwidth}
+\begin{center}
+    \includegraphics[height=\textheight]{assets/framework}
+\end{center}
+\end{column}
+\end{columns}
 \end{frame}
