@@ -28,6 +28,13 @@ What if we could \textbf{understand} and \textbf{manipulate} LLMs through their 
 \end{columns}
 \end{frame}
 
+
+\begin{frame}{Representation Engineering (RepE)}
+\begin{center}
+\includegraphics[width=0.9\textwidth]{assets/RepE_overview_no_title.png}
+\end{center}
+\end{frame}
+
 \begin{frame}{Representation Engineering (RepE)}
 \begin{center}
     Azaria and Mitchell, "The Internal State of an LLM Knows When It's Lying", 2023
@@ -38,6 +45,19 @@ What if we could \textbf{understand} and \textbf{manipulate} LLMs through their 
 Then, \textbf{if} an LLM \highlight{knows} when it's taking a shortcut, \\
 we can use Representation Engineering to detect it and suppress it.
 \end{quote}
+\end{frame}
+
+\begin{frame}{Idea: RepE for Shortcut Mitigation}
+\begin{itemize}
+    \item Collect \textbf{contrastive pairs} $(P^{(i)}_{+shortcut}, P^{(i)}_{-shortcut})$ of textual prompts\\
+    that differ only in the presence of a shortcut cue
+    \vspace{1em}
+    \item Use \textbf{Representation Reading} to extract a latent linear direction\\
+    corresponding to \emph{shortcut reliance}
+    \vspace{1em}
+    \item Use \textbf{Representation Control} to suppress shortcut-driven behavior\\
+    in the model at inference time
+\end{itemize}
 \end{frame}
 
 \begin{frame}{RepE-based framework for Shortcut Mitigation}
@@ -55,4 +75,73 @@ we can use Representation Engineering to detect it and suppress it.
 \end{center}
 \end{column}
 \end{columns}
+\end{frame}
+
+\begin{frame} {Data Pre-Processing}
+    \includegraphics[width=0.9\textwidth]{assets/preprocessing.png}
+\end{frame}
+
+\begin{frame} {Representation Reading}
+    \begin{columns}
+        \begin{column}{0.75\textwidth}
+            \includegraphics[width=\textwidth]{assets/RepReading.png}
+        \end{column}
+        \begin{column}{0.25\textwidth}
+            $V_l$ represents a \emph{shortcut reliance} direction for \\the layer $l$\\
+            \vspace{2em}
+            Can be used for \highlight{shortcut detection}
+        \end{column}
+    \end{columns}
+    
+\end{frame}
+
+\begin{frame} {Representation Control}
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \begin{center}
+                \includegraphics[width=0.9\textwidth]{assets/RepControl.png}
+            \end{center}
+            
+        \end{column}
+        \begin{column}{0.5\textwidth}
+                \begin{itemize}
+        \item \textit{Linear Combination}: 
+        \begin{equation*} 
+            H_l' = H_l + \alpha \textcolor{sintefdarkgreen}{S_l V_l} 
+        \end{equation*}
+        \item \textit{Piece-wise Operation}: 
+        \begin{equation*} 
+            H_l' = H_l + \alpha \textcolor{sintefdarkgreen}{S_l}\ sign(H_l^T\textcolor{sintefdarkgreen}{V_l})\textcolor{sintefdarkgreen}{V_l} \end{equation*}
+        \item \textit{Projection}: 
+        \begin{equation*} 
+            H_l' = \left( I - \frac{\textcolor{sintefdarkgreen}{V_lV_l}^T}{\|\textcolor{sintefdarkgreen}{V_l}\|^2}\right) H_l 
+        \end{equation*}
+    \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+
+\begin{frame}{Design Pros and Cons}
+    \begin{columns}
+        \begin{column}{0.4\textwidth}
+            \begin{center}
+                  \begin{itemize}
+            \item[\textcolor{sintefdarkgreen}{\cmark}] \textbf{Training-free} approach
+            \item[\textcolor{sintefdarkgreen}{\cmark}] \textbf{Modular}, trasferable across models and tasks
+            \item[\textcolor{sintefdarkgreen}{\cmark}] \textbf{Enhances transparency} of model's behavior
+        \end{itemize}
+            \end{center}
+        \end{column}
+        \begin{column}{0.4\textwidth}
+            \begin{center}
+                  \begin{itemize}
+            \item[\xmark] Requires \textbf{carefully crafted data} 
+            \item[\xmark] Can only target \textbf{open-weights} models
+            \item[\xmark] \textbf{Assumes existence and linearity} of a shortcut reliance direction in the latent space
+        \end{itemize}
+            \end{center}
+        \end{column}
+    \end{columns}
+ 
 \end{frame}
