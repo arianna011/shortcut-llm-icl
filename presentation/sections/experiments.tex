@@ -1,5 +1,147 @@
 \section{Experimental Evaluation}
 
-\begin{frame}{placeholder}
+\begin{frame}{Shortcut Detection Experiments}
+
+    \begin{itemize}
+        \item Load \textbf{Mistral 7B Instruct v0.1}
+        \item Compute scores \begin{equation*}A_{l,t} = S_l (\frac{h_{l,t} \cdot V_l}{||V_l||})\end{equation*}\\
+        \vspace{1em}
+        \item Compare "\emph{clean}" and "\emph{dirty}" (shortcut-augmented) textual prompts from \highlight{ShortcutSuite} (Yuan et al, \emph{Do llms overcome shortcut learning?}, 2024)
+    \end{itemize}
+    
+\end{frame}
+
+
+
+\begin{frame}{Shortcut Detection Experiments}
+
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+        \begin{center}
+            \highlight{\textbf{Clean prompt:}}
+            \begin{quote}
+                 [INST] Is the hypothesis entailed by the premise? yes or no. [/INST]\\
+                 \vspace{0.5em}
+            Premise: Managing better requires that agencies have, and rely upon,
+            sound financial and program information.\\
+            \vspace{0.5em}
+             Hypothesis: Agencies need
+            sound financial and program information for good management.
+            \end{quote}
+        \end{center}           
+        \end{column}
+        \begin{column}{0.5\textwidth}
+        \begin{center}
+            \textcolor{maincolor}{\textbf{Dirty prompt:}}
+            \begin{quote}
+                 [INST] Is the hypothesis entailed by the premise? yes or no. [/INST]\\
+                 \vspace{0.5em}
+            Premise: Managing better requires that agencies have, and rely upon,
+            sound financial and program information.\\
+            \vspace{0.5em}
+             Hypothesis: Agencies need
+            sound financial and program information for good management \textcolor{maincolor}{\textbf{and green is not red}}.
+            \end{quote}
+           
+            \end{center}
+            \end{column}
+    \end{columns}
+    
+\end{frame}
+
+
+\begin{frame}{Shortcut Detection Experiments}
+    \begin{center}
+    \includegraphics[width=\textwidth]{assets/lat_scans.png}
+    \end{center}
+    
+\end{frame}
+
+\begin{frame}{Shortcut Detection Experiments}
+
+    \begin{center}
+    \includegraphics[height=\textheight]{assets/detection_dirty_small.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Shortcut Mitigation Results}
+
+    \begin{center}
+    \includegraphics[height=0.9\textheight]{assets/results.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Shortcut Mitigation Example}
+    \begin{center}
+        \textbf{Input:}
+        \begin{quote}
+            \begin{center}
+            [INST] Is the hypothesis entailed by the premise? yes or no. [/INST]\\
+            \vspace{0.5em}
+            Premise: Fruit, vegetables, electronics, and a little bit of everything else is on
+            sale here.\\
+            \vspace{0.5em}
+            Hypothesis: You can buy all sorts of products and food here\\
+             and \textcolor{maincolor}{\textbf{green is not red}}.
+            \end{center}
+        \end{quote}
+    \end{center}
+    
+\end{frame}
+
+\begin{frame}{Shortcut Mitigation Example}
+    \begin{center}
+        \textbf{Baseline output:}
+        \begin{quote}
+            \begin{center}
+            Answer: \textcolor{maincolor}{\textbf{No, the hypothesis is not entailed by the premise.}} The premise does
+            not provide any information about the colors of the products on sale, so it is
+            not possible to conclude that \textcolor{maincolor}{\textbf{green is not red}} based on the...
+            \end{center}
+        \end{quote}
+    \end{center}
+    
+\end{frame}
+
+
+
+\begin{frame}{Shortcut Mitigation Example} 
+    \begin{center}
+      \textbf{Controlled output:}
+        \begin{quote}
+            \begin{center}
+            \highlight{Yes, the hypothesis is entailed by the premise.} The premise mentions that
+            various types of products and food are available for purchase, which supports the hypothesis that one could potentially buy a variety of items at this location.
+            \end{center}
+        \end{quote}
+    \end{center}
+    
+\end{frame}
+
+\begin{frame}{Shortcut Mitigation Example: Token attributions}
+    \begin{center}
+        \includegraphics[height=\textheight]{assets/attributions_red.png}
+    \end{center}
+    
+\end{frame}
+
+\begin{frame}{Shortcut Mitigation Example: Token attributions}
+    \begin{center}
+        \includegraphics[width=\textwidth]{assets/change_importance.png}
+    \end{center}
+    
+\end{frame}
+
+\begin{frame}{Non-linearity Analysis}
+
+    \begin{center}
+        Compute the \textbf{intrinsic dimensionality} of the model's hidden representations\\
+         via \emph{PCA} (\textbf{linear}) and \emph{TwoNN} (\textbf{non-linear})
+    \end{center}
+    \vspace{0.5em}
+    \begin{center}
+        \includegraphics[width=0.9\textwidth]{assets/intrinsic_dim.png}
+    \end{center}
+
     
 \end{frame}
