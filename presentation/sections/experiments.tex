@@ -4,8 +4,10 @@
 
     \begin{itemize}
         \item Load \textbf{Mistral 7B Instruct v0.1}
+        \pause
         \item Compute scores \begin{equation*}A_{l,t} = S_l (\frac{h_{l,t} \cdot V_l}{||V_l||})\end{equation*}\\
         \vspace{1em}
+        \pause
         \item Compare "\emph{clean}" and "\emph{dirty}" (shortcut-augmented) textual prompts from \highlight{ShortcutSuite} (Yuan et al, \emph{Do llms overcome shortcut learning?}, 2024)
     \end{itemize}
     
@@ -30,6 +32,7 @@
             \end{quote}
         \end{center}           
         \end{column}
+        \pause
         \begin{column}{0.5\textwidth}
         \begin{center}
             \textcolor{maincolor}{\textbf{Dirty prompt:}}
@@ -139,6 +142,7 @@
          via \emph{PCA} (\textbf{linear}) and \emph{TwoNN} (\textbf{non-linear})
     \end{center}
     \vspace{0.5em}
+    \pause
     \begin{center}
         \includegraphics[width=0.9\textwidth]{assets/intrinsic_dim.png}
     \end{center}

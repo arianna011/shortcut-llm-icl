@@ -6,11 +6,12 @@
 ML models often learn \textbf{non-robust decision rules} (\textcolor{maincolor}{"shortcuts"})\\
 \emph{e.g. background $\rightarrow$ object class}\\
 \vspace{2em}
+\onslide<2->{
 \highlight{$\leftarrow$ Plausible Causes}
 \begin{itemize}
       \item[\textcolor{sintefdarkgreen}{\textbullet}] simplicity bias
       \item[\textcolor{sintefdarkgreen}{\textbullet}] dataset bias
-\end{itemize}
+\end{itemize} }
 \end{column}
 \begin{column}{0.5\textwidth}
 \includegraphics[width=\textwidth]
@@ -29,6 +30,7 @@ ML models often learn \textbf{non-robust decision rules} (\textcolor{maincolor}{
       \item[\xmark] Undermined model \textbf{interpretability}
 \end{itemize}
 \end{column}
+\pause
 \begin{column}{0.4\textwidth}
 \includegraphics[width=0.9\textwidth]
 {assets/causation}
@@ -48,13 +50,14 @@ ML models often learn \textbf{non-robust decision rules} (\textcolor{maincolor}{
 \begin{frame}[fragile]{Shortcuts for LLMs under ICL}
 \begin{columns}
 \begin{column}{0.4\textwidth}
+\onslide<2->{
 \highlight{Example: Textual Entailment Recognition (TER)}\\
 \vspace{1em}
 \emph{Premise}: Sarah has won the lottery.\\
 \vspace{0.3em}
 \emph{Hypothesis}: You will \textcolor{maincolor}{\textbf{not}} believe it! Sarah just won the lottery.\\
 \vspace{0.3em}
-\emph{Answer}: \textcolor{maincolor}{\textbf{Contradiction}}
+\emph{Answer}: \textcolor{maincolor}{\textbf{Contradiction}} }
 \end{column}
 \begin{column}{0.5\textwidth}
 \includegraphics[width=\textwidth]

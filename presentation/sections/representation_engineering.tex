@@ -7,6 +7,7 @@ What if we could \textbf{understand} and \textbf{manipulate} LLMs through their 
 \vspace{2em}
 \emph{Zou et al, "Representation Engineering: A Top-Down Approach to AI Transparency", 2025}
 \end{column}
+\pause
 \begin{column}{0.5\textwidth}
 \includegraphics[width=\textwidth]
 {assets/zou_fairness}
@@ -40,6 +41,7 @@ What if we could \textbf{understand} and \textbf{manipulate} LLMs through their 
     Azaria and Mitchell, "The Internal State of an LLM Knows When It's Lying", 2023
 \end{center}
 \vspace{2em}
+\pause
 \begin{quote}
 \centering
 Then, \textbf{if} an LLM \highlight{knows} when it's taking a shortcut, \\
@@ -65,11 +67,12 @@ we can use Representation Engineering to detect it and suppress it.
 \begin{frame}{RepE-based framework for Shortcut Mitigation}
 \begin{columns}
 \begin{column}{0.2\textwidth}
+\onslide<2->{
 \begin{itemize}
     \item Data Pre-processing
     \item RepReading
     \item RepControl
-\end{itemize}
+\end{itemize} }
 \end{column}
 \begin{column}{0.8\textwidth}
 \begin{center}
@@ -88,6 +91,7 @@ we can use Representation Engineering to detect it and suppress it.
         \begin{column}{0.75\textwidth}
             \includegraphics[width=\textwidth]{assets/RepReading.png}
         \end{column}
+        \pause
         \begin{column}{0.25\textwidth}
             $V_l$ represents a \emph{shortcut reliance} direction for \\the layer $l$\\
             \vspace{2em}
@@ -105,6 +109,7 @@ we can use Representation Engineering to detect it and suppress it.
             \end{center}
             
         \end{column}
+        \pause
         \begin{column}{0.5\textwidth}
                 \begin{itemize}
         \item \textit{Linear Combination}: 
@@ -135,6 +140,7 @@ we can use Representation Engineering to detect it and suppress it.
         \end{itemize}
             \end{center}
         \end{column}
+        \pause
         \begin{column}{0.4\textwidth}
             \begin{center}
                   \begin{itemize}
